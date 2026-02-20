@@ -10,7 +10,7 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-const socket = io("http://localhost:5001", {
+const socket = io("https://backend-1-opx1.onrender.com", {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 3000
