@@ -10,12 +10,11 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-const socket = io("https://backend-1-opx1.onrender.com", {
+const socket = io(process.env.REACT_APP_API_URL, {
   reconnection: true,
   reconnectionAttempts: Infinity,
   reconnectionDelay: 3000
 });
-
 // ===============================
 // Reverse Geocode Cache
 // ===============================
