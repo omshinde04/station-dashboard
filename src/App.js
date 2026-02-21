@@ -10,41 +10,37 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-// ===============================
-// SOCKET CONFIG (Production Safe)
-// ===============================
-const socket = io(process.env.REACT_APP_API_URL, {
-  reconnection: true,
-  reconnectionAttempts: Infinity,
-  reconnectionDelay: 3000,
-  transports: ["websocket"]
-});
+/* ===============================
+   SOCKET INSTANCE (lazy + safe)
+================================ */
+let socket;
 
-// ===============================
-// Reverse Geocode Cache
-// ===============================
-const addressCache = {};
+/* ===============================
+   Reverse Geocode (Rate Safe)
+================================ */
+const addressCache = new Map();
 
-async function getAddress(lat, lng) {
+async function reverseGeocode(lat, lng) {
   const key = `${lat.toFixed(4)}-${lng.toFixed(4)}`;
-  if (addressCache[key]) return addressCache[key];
+  if (addressCache.has(key)) return addressCache.get(key);
 
   try {
     const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+      { headers: { "Accept-Language": "en" } }
     );
     const data = await res.json();
     const address = data.display_name || "Unknown location";
-    addressCache[key] = address;
+    addressCache.set(key, address);
     return address;
   } catch {
     return "Unknown location";
   }
 }
 
-// ===============================
-// Auto Fit Bounds
-// ===============================
+/* ===============================
+   Auto Fit Bounds
+================================ */
 function FitBounds({ stations }) {
   const map = useMap();
 
@@ -61,60 +57,97 @@ function FitBounds({ stations }) {
   return null;
 }
 
-// ===============================
-// MAIN DASHBOARD
-// ===============================
+/* ===============================
+   MAIN COMPONENT
+================================ */
 function App() {
 
   const [stations, setStations] = useState({});
-  const [time, setTime] = useState(new Date());
-  const [search, setSearch] = useState("");
   const [connected, setConnected] = useState(false);
-  const fetchingRef = useRef({});
+  const [search, setSearch] = useState("");
+  const [time, setTime] = useState(new Date());
 
-  // Live Clock
+  const offlineTimeoutRef = useRef({});
+
+  /* ===============================
+     Live Clock
+  ================================= */
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ===============================
-  // SOCKET EVENTS
-  // ===============================
+  /* ===============================
+     SOCKET LIFECYCLE
+  ================================= */
   useEffect(() => {
+
+    socket = io(process.env.REACT_APP_API_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 3000,
+      transports: ["websocket"]
+    });
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
 
     socket.on("locationUpdate", async (data) => {
-
       const {
         stationId,
         latitude,
         longitude,
+        status,
+        distance,
         assignedLatitude,
-        assignedLongitude
+        assignedLongitude,
+        allowedRadiusMeters
       } = data;
 
-      setStations(prev => {
+      let liveAddress = "";
+      let assignedAddress = "";
 
-        let liveAddress = prev[stationId]?.liveAddress || "";
-        let assignedAddress = prev[stationId]?.assignedAddress || "";
+      if (latitude && longitude)
+        liveAddress = await reverseGeocode(latitude, longitude);
 
-        return {
+      if (assignedLatitude && assignedLongitude)
+        assignedAddress = await reverseGeocode(
+          assignedLatitude,
+          assignedLongitude
+        );
+
+      setStations(prev => ({
+        ...prev,
+        [stationId]: {
+          ...prev[stationId],
+          stationId,
+          latitude,
+          longitude,
+          status,
+          distance,
+          assignedLatitude,
+          assignedLongitude,
+          allowedRadiusMeters,
+          liveAddress,
+          assignedAddress,
+          lastSeen: Date.now()
+        }
+      }));
+
+      /* Offline Reset Timer */
+      if (offlineTimeoutRef.current[stationId]) {
+        clearTimeout(offlineTimeoutRef.current[stationId]);
+      }
+
+      offlineTimeoutRef.current[stationId] = setTimeout(() => {
+        setStations(prev => ({
           ...prev,
           [stationId]: {
             ...prev[stationId],
-            ...data,
-            latitude,
-            longitude,
-            liveAddress,
-            assignedAddress,
-            lastSeen: new Date()
+            status: "OFFLINE"
           }
-        };
-      });
-
+        }));
+      }, 120000); // 2 min
     });
 
     socket.on("statusUpdate", (data) => {
@@ -128,38 +161,14 @@ function App() {
     });
 
     return () => {
-      socket.removeAllListeners();
+      socket.disconnect();
     };
 
   }, []);
 
-  // ===============================
-  // OFFLINE DETECTION (SAFE)
-  // ===============================
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStations(prev => {
-        const updated = { ...prev };
-
-        Object.values(updated).forEach(station => {
-          if (station.lastSeen) {
-            const diff = (Date.now() - new Date(station.lastSeen)) / 1000;
-            if (diff > 120) {
-              station.status = "OFFLINE";
-            }
-          }
-        });
-
-        return updated;
-      });
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // ===============================
-  // STATS
-  // ===============================
+  /* ===============================
+     STATS
+  ================================= */
   const stats = useMemo(() => {
     const values = Object.values(stations);
     return {
@@ -170,13 +179,15 @@ function App() {
     };
   }, [stations]);
 
-  // ===============================
-  // SORT PRIORITY
-  // ===============================
+  /* ===============================
+     SORT + FILTER
+  ================================= */
   const sortedStations = useMemo(() => {
     const priority = { OUTSIDE: 1, OFFLINE: 2, INSIDE: 3 };
     return Object.values(stations)
-      .filter(s => s.stationId?.toString().includes(search))
+      .filter(s =>
+        s.stationId?.toString().toLowerCase().includes(search.toLowerCase())
+      )
       .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
   }, [stations, search]);
 
@@ -194,8 +205,8 @@ function App() {
       }}>
         <div>
           <h2 style={{ margin: 0 }}>🚀 GeoSentinel Command Center</h2>
-          <div style={{ fontSize: "12px", color: connected ? "#22c55e" : "#ef4444" }}>
-            {connected ? "● Connected to Server" : "● Disconnected"}
+          <div style={{ fontSize: 12, color: connected ? "#22c55e" : "#ef4444" }}>
+            {connected ? "● Connected" : "● Disconnected"}
           </div>
         </div>
 
@@ -206,9 +217,9 @@ function App() {
             onChange={(e) => setSearch(e.target.value)}
             style={{
               padding: "6px 10px",
-              borderRadius: "6px",
+              borderRadius: 6,
               border: "none",
-              marginRight: "20px"
+              marginRight: 20
             }}
           />
           <div>{time.toLocaleTimeString()}</div>
@@ -227,8 +238,7 @@ function App() {
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <FitBounds stations={stations} />
 
-            {sortedStations.map((station, index) => {
-
+            {sortedStations.map((station) => {
               if (!station.latitude || !station.longitude) return null;
 
               let color = "#22c55e";
@@ -236,7 +246,7 @@ function App() {
               if (station.status === "OFFLINE") color = "#6b7280";
 
               return (
-                <React.Fragment key={index}>
+                <React.Fragment key={station.stationId}>
 
                   {station.assignedLatitude && (
                     <Circle
@@ -249,11 +259,7 @@ function App() {
                   <CircleMarker
                     center={[station.latitude, station.longitude]}
                     radius={14}
-                    pathOptions={{
-                      color,
-                      fillColor: color,
-                      fillOpacity: 0.9
-                    }}
+                    pathOptions={{ color, fillColor: color, fillOpacity: 0.9 }}
                   >
                     <Popup>
                       <strong>Station:</strong> {station.stationId}<br />
@@ -262,11 +268,11 @@ function App() {
                       <strong>Latitude:</strong> {station.latitude}<br />
                       <strong>Longitude:</strong> {station.longitude}<br />
                       <hr />
-                      <strong>Live Address:</strong><br />
-                      {station.liveAddress || "Loading..."}<br />
+                      <strong>Live:</strong><br />
+                      {station.liveAddress}<br />
                       <hr />
-                      <strong>Assigned Address:</strong><br />
-                      {station.assignedAddress || "Not configured"}
+                      <strong>Assigned:</strong><br />
+                      {station.assignedAddress}
                     </Popup>
                   </CircleMarker>
 
@@ -281,10 +287,9 @@ function App() {
           flex: 1,
           background: "#111827",
           color: "white",
-          padding: "20px",
+          padding: 20,
           overflowY: "auto"
         }}>
-
           <h3>📡 Live Overview</h3>
 
           <StatCard title="Total" value={stats.total} color="#3b82f6" />
@@ -294,12 +299,12 @@ function App() {
 
           <hr style={{ margin: "20px 0", borderColor: "#374151" }} />
 
-          {sortedStations.map((station, index) => (
-            <div key={index} style={{
+          {sortedStations.map((station) => (
+            <div key={station.stationId} style={{
               background: "#1f2937",
-              padding: "12px",
-              borderRadius: "10px",
-              marginBottom: "10px",
+              padding: 12,
+              borderRadius: 10,
+              marginBottom: 10,
               borderLeft: `5px solid ${station.status === "OUTSIDE"
                 ? "#ef4444"
                 : station.status === "OFFLINE"
@@ -310,16 +315,16 @@ function App() {
               <div style={{ fontWeight: "bold" }}>
                 {station.stationId}
               </div>
-              <div style={{ fontSize: "13px", color: "#9ca3af" }}>
+              <div style={{ fontSize: 13, color: "#9ca3af" }}>
                 {station.status}
               </div>
-              <div style={{ fontSize: "12px" }}>
+              <div style={{ fontSize: 12 }}>
                 📍 {station.latitude?.toFixed(6)}, {station.longitude?.toFixed(6)}
               </div>
             </div>
           ))}
-
         </div>
+
       </div>
     </div>
   );
@@ -329,14 +334,14 @@ function StatCard({ title, value, color }) {
   return (
     <div style={{
       background: "#1f2937",
-      padding: "15px",
-      borderRadius: "10px",
+      padding: 15,
+      borderRadius: 10,
       textAlign: "center",
       borderTop: `4px solid ${color}`,
-      marginBottom: "10px"
+      marginBottom: 10
     }}>
-      <div style={{ fontSize: "13px", color: "#9ca3af" }}>{title}</div>
-      <div style={{ fontSize: "22px", fontWeight: "bold" }}>{value}</div>
+      <div style={{ fontSize: 13, color: "#9ca3af" }}>{title}</div>
+      <div style={{ fontSize: 22, fontWeight: "bold" }}>{value}</div>
     </div>
   );
 }
