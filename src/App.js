@@ -290,7 +290,7 @@ function App() {
           padding: 20,
           overflowY: "auto"
         }}>
-          <h3>📡 Live Overview</h3>
+          <h3 style={{ marginBottom: 15 }}>📡 Live Overview</h3>
 
           <StatCard title="Total" value={stats.total} color="#3b82f6" />
           <StatCard title="Inside" value={stats.inside} color="#22c55e" />
@@ -299,32 +299,78 @@ function App() {
 
           <hr style={{ margin: "20px 0", borderColor: "#374151" }} />
 
-          {sortedStations.map((station) => (
-            <div key={station.stationId} style={{
-              background: "#1f2937",
-              padding: 12,
-              borderRadius: 10,
-              marginBottom: 10,
-              borderLeft: `5px solid ${station.status === "OUTSIDE"
-                ? "#ef4444"
-                : station.status === "OFFLINE"
-                  ? "#6b7280"
-                  : "#22c55e"
-                }`
-            }}>
-              <div style={{ fontWeight: "bold" }}>
-                {station.stationId}
-              </div>
-              <div style={{ fontSize: 13, color: "#9ca3af" }}>
-                {station.status}
-              </div>
-              <div style={{ fontSize: 12 }}>
-                📍 {station.latitude?.toFixed(6)}, {station.longitude?.toFixed(6)}
-              </div>
-            </div>
-          ))}
-        </div>
+          {sortedStations.map((station) => {
 
+            let borderColor = "#22c55e";
+            if (station.status === "OUTSIDE") borderColor = "#ef4444";
+            if (station.status === "OFFLINE") borderColor = "#6b7280";
+
+            return (
+              <div key={station.stationId} style={{
+                background: "#1f2937",
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 15,
+                borderLeft: `5px solid ${borderColor}`,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.3)"
+              }}>
+
+                {/* Header */}
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 8
+                }}>
+                  <div style={{ fontWeight: "bold", fontSize: 15 }}>
+                    🚀 {station.stationId}
+                  </div>
+                  <div style={{
+                    fontSize: 12,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    background: borderColor,
+                    color: "white"
+                  }}>
+                    {station.status}
+                  </div>
+                </div>
+
+                {/* Coordinates */}
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  📍 <strong>Lat:</strong> {station.latitude?.toFixed(6)}
+                  <br />
+                  📍 <strong>Lng:</strong> {station.longitude?.toFixed(6)}
+                </div>
+
+                {/* Distance */}
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  📏 <strong>Distance:</strong> {station.distance || 0} m
+                </div>
+
+                {/* Assigned Location */}
+                <div style={{ fontSize: 12, marginBottom: 6 }}>
+                  🎯 <strong>Assigned Area:</strong><br />
+                  {station.assignedAddress || "Not configured"}
+                </div>
+
+                {/* Live Address */}
+                <div style={{ fontSize: 12, marginBottom: 6 }}>
+                  🛰 <strong>Current Location:</strong><br />
+                  {station.liveAddress || "Resolving..."}
+                </div>
+
+                {/* Last Seen */}
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  ⏱ Last Update:{" "}
+                  {station.lastSeen
+                    ? new Date(station.lastSeen).toLocaleTimeString()
+                    : "—"}
+                </div>
+
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
