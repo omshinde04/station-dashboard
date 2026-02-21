@@ -12,30 +12,6 @@ import "leaflet/dist/leaflet.css";
 
 let socket;
 
-/* ===============================
-   DISTRICT MAP
-================================ */
-const districtMap = {
-  "71": "Kolhapur",
-  "72": "Ratnagiri",
-  "73": "Sindhudurg",
-  "74": "Raigad",
-  "75": "Thane",
-  "76": "Palghar",
-  "77": "Nashik",
-  "78": "Dhule",
-  "79": "Nandurbar",
-  "80": "Jalgaon",
-  "81": "Wardha",
-  "82": "Gondia",
-  "83": "Gadchiroli",
-  "84": "Bhandara",
-  "85": "Washim",
-  "86": "Hingoli",
-  "87": "Jalna",
-  "88": "Ahilyanagar"
-};
-
 const addressCache = new Map();
 
 async function reverseGeocode(lat, lng) {
@@ -74,6 +50,28 @@ function FitBounds({ stations }) {
   return null;
 }
 
+//district 
+const districtMap = {
+  "71": "Kolhapur",
+  "72": "Ratnagiri",
+  "73": "Sindhudurg",
+  "74": "Raigad",
+  "75": "Thane",
+  "76": "Palghar",
+  "77": "Nashik",
+  "78": "Dhule",
+  "79": "Nandurbar",
+  "80": "Jalgaon",
+  "81": "Wardha",
+  "82": "Gondia",
+  "83": "Gadchiroli",
+  "84": "Bhandara",
+  "85": "Washim",
+  "86": "Hingoli",
+  "87": "Jalna",
+  "88": "Ahilyanagar"
+};
+
 function App() {
 
   const [stations, setStations] = useState({});
@@ -81,7 +79,8 @@ function App() {
   const [search, setSearch] = useState("");
   const [time, setTime] = useState(new Date());
   const offlineTimeoutRef = useRef({});
-
+  // ADD THIS STATE inside App()
+  const [selectedDistrict, setSelectedDistrict] = useState("ALL");
   /* ===============================
      LIVE CLOCK
   ================================= */
@@ -91,7 +90,7 @@ function App() {
   }, []);
 
   /* ===============================
-     INITIAL FETCH
+     🔥 INITIAL FETCH ALL STATIONS
   ================================= */
   useEffect(() => {
 
@@ -102,6 +101,7 @@ function App() {
         );
 
         const data = await res.json();
+
         const formatted = {};
 
         for (const station of data.data) {
@@ -152,11 +152,14 @@ function App() {
   }, []);
 
   /* ===============================
-     SOCKET
+     SOCKET LIFECYCLE
   ================================= */
   useEffect(() => {
 
     socket = io(process.env.REACT_APP_API_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 3000,
       transports: ["websocket"]
     });
 
@@ -200,6 +203,7 @@ function App() {
         }
       }));
 
+      // Reset offline timer
       if (offlineTimeoutRef.current[stationId]) {
         clearTimeout(offlineTimeoutRef.current[stationId]);
       }
@@ -215,12 +219,14 @@ function App() {
       }, 120000);
     });
 
-    return () => socket?.disconnect();
+    return () => {
+      if (socket) socket.disconnect();
+    };
 
   }, []);
 
   /* ===============================
-     GLOBAL STATS
+     STATS
   ================================= */
   const stats = useMemo(() => {
     const values = Object.values(stations);
@@ -232,35 +238,31 @@ function App() {
     };
   }, [stations]);
 
-  /* ===============================
-     DISTRICT GROUPING
-  ================================= */
-  const groupedStations = useMemo(() => {
+  const sortedStations = useMemo(() => {
+    const priority = { OUTSIDE: 1, OFFLINE: 2, INSIDE: 3 };
 
-    const grouped = {};
+    return Object.values(stations)
+      .filter(s => {
 
-    Object.values(stations)
-      .filter(s =>
-        s.stationId?.toString().toLowerCase().includes(search.toLowerCase())
-      )
-      .forEach(station => {
+        // 🔎 Search filter
+        const matchesSearch = s.stationId
+          ?.toString()
+          .toLowerCase()
+          .includes(search.toLowerCase());
 
-        const code = station.stationId.toString().slice(0, 2);
-        const districtName = districtMap[code] || "Unknown";
+        // 🏙 District filter
+        const districtCode = s.stationId?.toString().slice(0, 2);
 
-        if (!grouped[code]) {
-          grouped[code] = {
-            name: districtName,
-            stations: []
-          };
-        }
+        const matchesDistrict =
+          selectedDistrict === "ALL" ||
+          districtCode === selectedDistrict;
 
-        grouped[code].stations.push(station);
-      });
+        return matchesSearch && matchesDistrict;
+      })
+      .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
 
-    return grouped;
+  }, [stations, search, selectedDistrict]);
 
-  }, [stations, search]);
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0f172a" }}>
@@ -295,6 +297,39 @@ function App() {
           />
           <div>{time.toLocaleTimeString()}</div>
         </div>
+        <div>
+          <select
+            value={selectedDistrict}
+            onChange={(e) => setSelectedDistrict(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "none",
+              marginRight: 10
+            }}
+          >
+            <option value="ALL">All Districts</option>
+            {Object.entries(districtMap).map(([code, name]) => (
+              <option key={code} value={code}>
+                {name} ({code})
+              </option>
+            ))}
+          </select>
+
+          <input
+            placeholder="Search Station..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              border: "none",
+              marginRight: 20
+            }}
+          />
+
+          <div>{time.toLocaleTimeString()}</div>
+        </div>
       </div>
 
       <div style={{ flex: 1, display: "flex" }}>
@@ -309,7 +344,7 @@ function App() {
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <FitBounds stations={stations} />
 
-            {Object.values(stations).map((station) => {
+            {sortedStations.map((station) => {
               if (!station.latitude || !station.longitude) return null;
 
               let color = "#22c55e";
@@ -334,7 +369,16 @@ function App() {
                   >
                     <Popup>
                       <strong>Station:</strong> {station.stationId}<br />
-                      <strong>Status:</strong> {station.status}
+                      <strong>Status:</strong> {station.status}<br />
+                      <strong>Distance:</strong> {station.distance || 0} m<br />
+                      <strong>Latitude:</strong> {station.latitude}<br />
+                      <strong>Longitude:</strong> {station.longitude}<br />
+                      <hr />
+                      <strong>Live:</strong><br />
+                      {station.liveAddress}<br />
+                      <hr />
+                      <strong>Assigned:</strong><br />
+                      {station.assignedAddress}
                     </Popup>
                   </CircleMarker>
 
@@ -361,38 +405,77 @@ function App() {
 
           <hr style={{ margin: "20px 0", borderColor: "#374151" }} />
 
-          {Object.entries(groupedStations).map(([code, group]) => (
-            <div key={code} style={{ marginBottom: 20 }}>
-              <div style={{
-                fontWeight: "bold",
-                marginBottom: 10,
-                borderBottom: "1px solid #374151",
-                paddingBottom: 5
+          {sortedStations.map((station) => {
+
+            let borderColor = "#22c55e";
+            if (station.status === "OUTSIDE") borderColor = "#ef4444";
+            if (station.status === "OFFLINE") borderColor = "#6b7280";
+
+            return (
+              <div key={station.stationId} style={{
+                background: "#1f2937",
+                padding: 16,
+                borderRadius: 12,
+                marginBottom: 15,
+                borderLeft: `5px solid ${borderColor}`,
+                boxShadow: "0 6px 20px rgba(0,0,0,0.3)"
               }}>
-                📍 {group.name} ({code})
-              </div>
 
-              {group.stations.map((station) => {
-
-                let borderColor = "#22c55e";
-                if (station.status === "OUTSIDE") borderColor = "#ef4444";
-                if (station.status === "OFFLINE") borderColor = "#6b7280";
-
-                return (
-                  <div key={station.stationId} style={{
-                    background: "#1f2937",
-                    padding: 14,
-                    borderRadius: 10,
-                    marginBottom: 10,
-                    borderLeft: `5px solid ${borderColor}`
-                  }}>
-                    🚀 {station.stationId} — {station.status}
+                {/* Header */}
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 8
+                }}>
+                  <div style={{ fontWeight: "bold", fontSize: 15 }}>
+                    🚀 {station.stationId}
                   </div>
-                );
-              })}
-            </div>
-          ))}
+                  <div style={{
+                    fontSize: 12,
+                    padding: "4px 8px",
+                    borderRadius: 6,
+                    background: borderColor,
+                    color: "white"
+                  }}>
+                    {station.status}
+                  </div>
+                </div>
 
+                {/* Coordinates */}
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  📍 <strong>Lat:</strong> {station.latitude?.toFixed(6)}
+                  <br />
+                  📍 <strong>Lng:</strong> {station.longitude?.toFixed(6)}
+                </div>
+
+                {/* Distance */}
+                <div style={{ fontSize: 13, marginBottom: 6 }}>
+                  📏 <strong>Distance:</strong> {station.distance || 0} m
+                </div>
+
+                {/* Assigned Location */}
+                <div style={{ fontSize: 12, marginBottom: 6 }}>
+                  🎯 <strong>Assigned Area:</strong><br />
+                  {station.assignedAddress || "Not configured"}
+                </div>
+
+                {/* Live Address */}
+                <div style={{ fontSize: 12, marginBottom: 6 }}>
+                  🛰 <strong>Current Location:</strong><br />
+                  {station.liveAddress || "Resolving..."}
+                </div>
+
+                {/* Last Seen */}
+                <div style={{ fontSize: 11, color: "#9ca3af" }}>
+                  ⏱ Last Update:{" "}
+                  {station.lastSeen
+                    ? new Date(station.lastSeen).toLocaleTimeString()
+                    : "—"}
+                </div>
+
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -412,6 +495,7 @@ function StatCard({ title, value, color }) {
       <div style={{ fontSize: 13, color: "#9ca3af" }}>{title}</div>
       <div style={{ fontSize: 22, fontWeight: "bold" }}>{value}</div>
     </div>
+
   );
 }
 
