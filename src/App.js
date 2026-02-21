@@ -10,11 +10,16 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
+// ===============================
+// SOCKET CONFIG (Production Safe)
+// ===============================
 const socket = io(process.env.REACT_APP_API_URL, {
   reconnection: true,
   reconnectionAttempts: Infinity,
-  reconnectionDelay: 3000
+  reconnectionDelay: 3000,
+  transports: ["websocket"]
 });
+
 // ===============================
 // Reverse Geocode Cache
 // ===============================
@@ -67,7 +72,7 @@ function App() {
   const [connected, setConnected] = useState(false);
   const fetchingRef = useRef({});
 
-  // Live clock
+  // Live Clock
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -88,11 +93,13 @@ function App() {
         latitude,
         longitude,
         assignedLatitude,
-        assignedLongitude
+        assignedLongitude,
+        status,
+        distance
       } = data;
 
-      let liveAddress = "";
-      let assignedAddress = "";
+      let liveAddress = stations[stationId]?.liveAddress || "";
+      let assignedAddress = stations[stationId]?.assignedAddress || "";
 
       if (!fetchingRef.current[stationId]) {
         fetchingRef.current[stationId] = true;
@@ -111,6 +118,10 @@ function App() {
         [stationId]: {
           ...prev[stationId],
           ...data,
+          latitude,
+          longitude,
+          status,
+          distance,
           liveAddress,
           assignedAddress,
           lastSeen: new Date()
@@ -129,14 +140,13 @@ function App() {
     });
 
     return () => {
-      socket.off("locationUpdate");
-      socket.off("statusUpdate");
+      socket.removeAllListeners();
     };
 
   }, []);
 
   // ===============================
-  // AUTO OFFLINE DETECTION (FRONTEND SAFETY)
+  // OFFLINE DETECTION (SAFE)
   // ===============================
   useEffect(() => {
     const interval = setInterval(() => {
@@ -145,14 +155,16 @@ function App() {
 
         Object.values(updated).forEach(station => {
           if (station.lastSeen) {
-            const diff = (new Date() - new Date(station.lastSeen)) / 1000;
-            if (diff > 120) station.status = "OFFLINE";
+            const diff = (Date.now() - new Date(station.lastSeen)) / 1000;
+            if (diff > 120) {
+              station.status = "OFFLINE";
+            }
           }
         });
 
         return updated;
       });
-    }, 10000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, []);
@@ -171,13 +183,13 @@ function App() {
   }, [stations]);
 
   // ===============================
-  // SORT BY PRIORITY
+  // SORT PRIORITY
   // ===============================
   const sortedStations = useMemo(() => {
     const priority = { OUTSIDE: 1, OFFLINE: 2, INSIDE: 3 };
     return Object.values(stations)
       .filter(s => s.stationId?.toString().includes(search))
-      .sort((a, b) => priority[a.status] - priority[b.status]);
+      .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
   }, [stations, search]);
 
   return (
@@ -259,11 +271,13 @@ function App() {
                       <strong>Station:</strong> {station.stationId}<br />
                       <strong>Status:</strong> {station.status}<br />
                       <strong>Distance:</strong> {station.distance || 0} m<br />
+                      <strong>Latitude:</strong> {station.latitude}<br />
+                      <strong>Longitude:</strong> {station.longitude}<br />
                       <hr />
-                      <strong>Live:</strong><br />
+                      <strong>Live Address:</strong><br />
                       {station.liveAddress || "Loading..."}<br />
                       <hr />
-                      <strong>Assigned:</strong><br />
+                      <strong>Assigned Address:</strong><br />
                       {station.assignedAddress || "Not configured"}
                     </Popup>
                   </CircleMarker>
@@ -312,7 +326,7 @@ function App() {
                 {station.status}
               </div>
               <div style={{ fontSize: "12px" }}>
-                📍 {station.liveAddress || "Loading..."}
+                📍 {station.latitude?.toFixed(6)}, {station.longitude?.toFixed(6)}
               </div>
             </div>
           ))}
