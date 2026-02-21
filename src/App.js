@@ -10,17 +10,13 @@ import {
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-/* ===============================
-   SOCKET INSTANCE (lazy + safe)
-================================ */
 let socket;
 
-/* ===============================
-   Reverse Geocode (Rate Safe)
-================================ */
 const addressCache = new Map();
 
 async function reverseGeocode(lat, lng) {
+  if (!lat || !lng) return "";
+
   const key = `${lat.toFixed(4)}-${lng.toFixed(4)}`;
   if (addressCache.has(key)) return addressCache.get(key);
 
@@ -38,9 +34,6 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
-/* ===============================
-   Auto Fit Bounds
-================================ */
 function FitBounds({ stations }) {
   const map = useMap();
 
@@ -57,24 +50,82 @@ function FitBounds({ stations }) {
   return null;
 }
 
-/* ===============================
-   MAIN COMPONENT
-================================ */
 function App() {
 
   const [stations, setStations] = useState({});
   const [connected, setConnected] = useState(false);
   const [search, setSearch] = useState("");
   const [time, setTime] = useState(new Date());
-
   const offlineTimeoutRef = useRef({});
 
   /* ===============================
-     Live Clock
+     LIVE CLOCK
   ================================= */
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  /* ===============================
+     🔥 INITIAL FETCH ALL STATIONS
+  ================================= */
+  useEffect(() => {
+
+    async function fetchStations() {
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/stations/all`
+        );
+
+        const data = await res.json();
+
+        const formatted = {};
+
+        for (const station of data.data) {
+
+          let liveAddress = "";
+          let assignedAddress = "";
+
+          if (station.latitude && station.longitude) {
+            liveAddress = await reverseGeocode(
+              station.latitude,
+              station.longitude
+            );
+          }
+
+          if (station.assigned_latitude && station.assigned_longitude) {
+            assignedAddress = await reverseGeocode(
+              station.assigned_latitude,
+              station.assigned_longitude
+            );
+          }
+
+          formatted[station.station_id] = {
+            stationId: station.station_id,
+            latitude: station.latitude,
+            longitude: station.longitude,
+            assignedLatitude: station.assigned_latitude,
+            assignedLongitude: station.assigned_longitude,
+            allowedRadiusMeters: station.allowed_radius_meters,
+            status: station.status || "OFFLINE",
+            distance: station.distance_meters,
+            liveAddress,
+            assignedAddress,
+            lastSeen: station.updated_at
+              ? new Date(station.updated_at).getTime()
+              : null
+          };
+        }
+
+        setStations(formatted);
+
+      } catch (err) {
+        console.error("Failed to fetch stations:", err);
+      }
+    }
+
+    fetchStations();
+
   }, []);
 
   /* ===============================
@@ -93,6 +144,7 @@ function App() {
     socket.on("disconnect", () => setConnected(false));
 
     socket.on("locationUpdate", async (data) => {
+
       const {
         stationId,
         latitude,
@@ -104,17 +156,11 @@ function App() {
         allowedRadiusMeters
       } = data;
 
-      let liveAddress = "";
-      let assignedAddress = "";
-
-      if (latitude && longitude)
-        liveAddress = await reverseGeocode(latitude, longitude);
-
-      if (assignedLatitude && assignedLongitude)
-        assignedAddress = await reverseGeocode(
-          assignedLatitude,
-          assignedLongitude
-        );
+      const liveAddress = await reverseGeocode(latitude, longitude);
+      const assignedAddress = await reverseGeocode(
+        assignedLatitude,
+        assignedLongitude
+      );
 
       setStations(prev => ({
         ...prev,
@@ -134,7 +180,7 @@ function App() {
         }
       }));
 
-      /* Offline Reset Timer */
+      // Reset offline timer
       if (offlineTimeoutRef.current[stationId]) {
         clearTimeout(offlineTimeoutRef.current[stationId]);
       }
@@ -147,21 +193,11 @@ function App() {
             status: "OFFLINE"
           }
         }));
-      }, 120000); // 2 min
-    });
-
-    socket.on("statusUpdate", (data) => {
-      setStations(prev => ({
-        ...prev,
-        [data.stationId]: {
-          ...prev[data.stationId],
-          status: data.status
-        }
-      }));
+      }, 120000);
     });
 
     return () => {
-      socket.disconnect();
+      if (socket) socket.disconnect();
     };
 
   }, []);
@@ -179,9 +215,6 @@ function App() {
     };
   }, [stations]);
 
-  /* ===============================
-     SORT + FILTER
-  ================================= */
   const sortedStations = useMemo(() => {
     const priority = { OUTSIDE: 1, OFFLINE: 2, INSIDE: 3 };
     return Object.values(stations)
@@ -389,6 +422,7 @@ function StatCard({ title, value, color }) {
       <div style={{ fontSize: 13, color: "#9ca3af" }}>{title}</div>
       <div style={{ fontSize: 22, fontWeight: "bold" }}>{value}</div>
     </div>
+
   );
 }
 
