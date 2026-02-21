@@ -284,18 +284,6 @@ function App() {
         </div>
 
         <div>
-          <input
-            placeholder="Search Station..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 6,
-              border: "none",
-              marginRight: 20
-            }}
-          />
-          <div>{time.toLocaleTimeString()}</div>
         </div>
         <div>
           <select
