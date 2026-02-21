@@ -93,40 +93,28 @@ function App() {
         latitude,
         longitude,
         assignedLatitude,
-        assignedLongitude,
-        status,
-        distance
+        assignedLongitude
       } = data;
 
-      let liveAddress = stations[stationId]?.liveAddress || "";
-      let assignedAddress = stations[stationId]?.assignedAddress || "";
+      setStations(prev => {
 
-      if (!fetchingRef.current[stationId]) {
-        fetchingRef.current[stationId] = true;
+        let liveAddress = prev[stationId]?.liveAddress || "";
+        let assignedAddress = prev[stationId]?.assignedAddress || "";
 
-        if (latitude && longitude)
-          liveAddress = await getAddress(latitude, longitude);
+        return {
+          ...prev,
+          [stationId]: {
+            ...prev[stationId],
+            ...data,
+            latitude,
+            longitude,
+            liveAddress,
+            assignedAddress,
+            lastSeen: new Date()
+          }
+        };
+      });
 
-        if (assignedLatitude && assignedLongitude)
-          assignedAddress = await getAddress(assignedLatitude, assignedLongitude);
-
-        fetchingRef.current[stationId] = false;
-      }
-
-      setStations(prev => ({
-        ...prev,
-        [stationId]: {
-          ...prev[stationId],
-          ...data,
-          latitude,
-          longitude,
-          status,
-          distance,
-          liveAddress,
-          assignedAddress,
-          lastSeen: new Date()
-        }
-      }));
     });
 
     socket.on("statusUpdate", (data) => {
