@@ -81,6 +81,25 @@ function App() {
   const offlineTimeoutRef = useRef({});
   // ADD THIS STATE inside App()
   const [selectedDistrict, setSelectedDistrict] = useState("ALL");
+
+
+  // ✅ ADD THIS FUNCTION HERE
+  async function resolveAddressAsync(data) {
+    const liveAddress = await reverseGeocode(data.latitude, data.longitude);
+    const assignedAddress = await reverseGeocode(
+      data.assignedLatitude,
+      data.assignedLongitude
+    );
+
+    setStations(prev => ({
+      ...prev,
+      [data.stationId]: {
+        ...prev[data.stationId],
+        liveAddress,
+        assignedAddress
+      }
+    }));
+  }
   /* ===============================
      LIVE CLOCK
   ================================= */
@@ -166,7 +185,7 @@ function App() {
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
 
-    socket.on("locationUpdate", async (data) => {
+    socket.on("locationUpdate", (data) => {
 
       const {
         stationId,
@@ -179,12 +198,7 @@ function App() {
         allowedRadiusMeters
       } = data;
 
-      const liveAddress = await reverseGeocode(latitude, longitude);
-      const assignedAddress = await reverseGeocode(
-        assignedLatitude,
-        assignedLongitude
-      );
-
+      // 🔥 Instant UI update (NO blocking)
       setStations(prev => ({
         ...prev,
         [stationId]: {
@@ -197,13 +211,16 @@ function App() {
           assignedLatitude,
           assignedLongitude,
           allowedRadiusMeters,
-          liveAddress,
-          assignedAddress,
+          liveAddress: prev[stationId]?.liveAddress || "Resolving...",
+          assignedAddress: prev[stationId]?.assignedAddress || "Resolving...",
           lastSeen: Date.now()
         }
       }));
 
-      // Reset offline timer
+      // 🔥 Resolve address in background
+      resolveAddressAsync(data);
+
+      // 🔥 Reset offline timer
       if (offlineTimeoutRef.current[stationId]) {
         clearTimeout(offlineTimeoutRef.current[stationId]);
       }
@@ -218,7 +235,6 @@ function App() {
         }));
       }, 120000);
     });
-
     return () => {
       if (socket) socket.disconnect();
     };
