@@ -9,18 +9,34 @@ export default function Login({ onLogin }) {
 
     const handleLogin = async () => {
         try {
+            if (!email || !password) {
+                alert("Please enter email and password");
+                return;
+            }
+
             setLoading(true);
 
             const res = await axios.post(
-                process.env.REACT_APP_API_URL + "/api/auth/login",
-                { email, password }
+                `${process.env.REACT_APP_API_URL}/api/auth/login`,
+                { email, password },
+                {
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                }
             );
 
             localStorage.setItem("token", res.data.token);
+
             onLogin();
 
         } catch (err) {
-            alert("Invalid credentials");
+            console.error("Login error:", err.response?.data || err.message);
+
+            alert(
+                err.response?.data?.message || "Login failed. Check credentials."
+            );
+
         } finally {
             setLoading(false);
         }
@@ -44,6 +60,7 @@ export default function Login({ onLogin }) {
                     type="email"
                     placeholder="tech.wcdrailtel@gmail.com"
                     className="w-full mb-4 p-3 rounded-xl bg-slate-100 ring-1 ring-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    value={email}
                     onChange={(e) => setEmail(e.target.value)}
                 />
 
@@ -51,13 +68,14 @@ export default function Login({ onLogin }) {
                     type="password"
                     placeholder="Password"
                     className="w-full mb-6 p-3 rounded-xl bg-slate-100 ring-1 ring-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
+                    value={password}
                     onChange={(e) => setPassword(e.target.value)}
                 />
 
                 <button
                     onClick={handleLogin}
                     disabled={loading}
-                    className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all"
+                    className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition-all disabled:opacity-50"
                 >
                     {loading ? "Authenticating..." : "Secure Login"}
                 </button>
