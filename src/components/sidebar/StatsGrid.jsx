@@ -2,7 +2,8 @@ import {
     Activity,
     CheckCircle,
     AlertTriangle,
-    WifiOff
+    WifiOff,
+    Wifi
 } from "lucide-react";
 import StatCard from "./StatCard";
 
@@ -16,12 +17,18 @@ export default function StatsGrid({ stats }) {
         <div className="grid grid-cols-2 gap-5">
 
             <StatCard
-                title="Total Nodes"
+                title="Total Machines"
                 value={stats.total}
                 icon={<Activity size={20} />}
                 color="blue"
             />
 
+            <StatCard
+                title="Online Machines"
+                value={stats.online}
+                icon={<Wifi size={20} />}
+                color="green"
+            />
             <StatCard
                 title="Inside Perimeter"
                 value={stats.inside}

@@ -173,14 +173,21 @@ export function useStations(selectedDistrict, search) {
     ================================= */
     const stats = useMemo(() => {
         const values = Object.values(stations);
+
+        const now = Date.now();
+
+        const online = values.filter(
+            s => s.lastSeen && now - s.lastSeen < 120000   // 2 minutes
+        ).length;
+
         return {
             total: values.length,
+            online,
             inside: values.filter(s => s.status === "INSIDE").length,
             outside: values.filter(s => s.status === "OUTSIDE").length,
             offline: values.filter(s => s.status === "OFFLINE").length
         };
     }, [stations]);
-
     /* ===============================
        FILTER + SORT
     ================================= */
