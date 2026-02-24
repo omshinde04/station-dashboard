@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Shield, Search, ChevronDown } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
+import RailtailLogo from "../../assets/images/railtail.png";
 
 const districtMap = {
     "71": "Kolhapur",
@@ -29,27 +30,35 @@ export default function Header({
     }, []);
 
     return (
-        <header className="sticky top-0 z-50 px-6 py-5 backdrop-blur-xl bg-white/70 border-b border-slate-200/60 shadow-sm">
-            <div className="flex justify-between items-center max-w-[1600px] mx-auto">
+        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+            <div className="max-w-[1600px] mx-auto px-6 py-5 flex justify-between items-center">
 
-                {/* LEFT SIDE - LOGO */}
-                <div className="flex items-center gap-4">
-                    <div className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md">
-                        <Shield size={22} />
-                    </div>
+                {/* LEFT SIDE - BRANDING */}
+                <div className="flex items-center gap-5">
 
-                    <div>
-                        <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                            GeoSentinel
+                    {/* Company Logo */}
+                    <img
+                        src={RailtailLogo}
+                        alt="Railtail Logo"
+                        className="h-10 object-contain"
+                    />
+
+                    {/* Divider */}
+                    <div className="h-8 w-px bg-slate-300" />
+
+                    {/* Product Branding */}
+                    <div className="flex flex-col">
+                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                            Railtail
                         </h1>
-                        <p className="text-[11px] uppercase tracking-widest text-slate-500 font-medium">
-                            Real-Time Monitoring System
-                        </p>
+                        <span className="text-[11px] uppercase tracking-widest text-emerald-600 font-semibold">
+                            Command Center
+                        </span>
                     </div>
                 </div>
 
-                {/* RIGHT SIDE - CONTROLS */}
-                <div className="flex items-center gap-5">
+                {/* RIGHT SIDE CONTROLS */}
+                <div className="flex items-center gap-6">
 
                     {/* SEARCH */}
                     <div className="relative">
@@ -67,7 +76,7 @@ export default function Header({
                         />
                     </div>
 
-                    {/* DISTRICT DROPDOWN */}
+                    {/* DISTRICT SELECT */}
                     <div className="relative">
                         <select
                             value={selectedDistrict}
@@ -80,7 +89,7 @@ export default function Header({
                             <option value="ALL">All Districts</option>
                             {Object.entries(districtMap).map(([code, name]) => (
                                 <option key={code} value={code}>
-                                    {name}
+                                    {name} ({code})
                                 </option>
                             ))}
                         </select>
@@ -91,23 +100,26 @@ export default function Header({
                         />
                     </div>
 
-                    {/* LIVE STATUS */}
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-full 
-            ${connected
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/30"
-                            : "bg-red-50 text-red-600 ring-1 ring-red-500/30"
-                        }`}>
-
-                        {connected && (
-                            <span className="relative flex h-2 w-2">
-                                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-                                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                            </span>
-                        )}
-
-                        <span className="text-xs font-bold uppercase tracking-wider">
-                            {connected ? "Live" : "Offline"}
+                    {/* CONNECTION STATUS */}
+                    <div
+                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider
+              ${connected
+                                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/30"
+                                : "bg-red-50 text-red-600 ring-1 ring-red-500/30"
+                            }`}
+                    >
+                        <span className="relative flex h-2 w-2">
+                            <span
+                                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${connected ? "bg-emerald-400 animate-ping" : "bg-red-400"
+                                    }`}
+                            ></span>
+                            <span
+                                className={`relative inline-flex h-2 w-2 rounded-full ${connected ? "bg-emerald-500" : "bg-red-500"
+                                    }`}
+                            ></span>
                         </span>
+
+                        {connected ? "System Live" : "Disconnected"}
                     </div>
 
                     {/* CLOCK */}
