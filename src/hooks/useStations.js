@@ -12,18 +12,19 @@ async function reverseGeocode(lat, lng) {
 
     try {
         const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
-            { headers: { "Accept-Language": "en" } }
+            `${process.env.REACT_APP_API_URL}/api/geocode?lat=${lat}&lng=${lng}`
         );
+
         const data = await res.json();
         const address = data.display_name || "Unknown location";
+
         addressCache.set(key, address);
         return address;
+
     } catch {
         return "Unknown location";
     }
 }
-
 export function useStations(selectedDistrict, search) {
     const [stations, setStations] = useState({});
     const [connected, setConnected] = useState(false);
