@@ -5,27 +5,32 @@ export default function StationCard({ station }) {
     const isOnline =
         station.lastSeen && now - station.lastSeen < 120000;
 
-    // 🔥 Final status logic
     let statusLabel;
     let style;
 
     if (!isOnline) {
+        // ⚫ OFFLINE
         statusLabel = "OFFLINE";
         style = {
             badge: "bg-slate-100 text-slate-600",
-            border: "border-slate-400"
+            border: "border-slate-400",
+            dot: "bg-slate-500"
         };
     } else if (station.status === "OUTSIDE") {
+        // 🔴 ONLINE but OUTSIDE
         statusLabel = "OUTSIDE";
         style = {
             badge: "bg-red-100 text-red-700",
-            border: "border-red-500"
+            border: "border-red-500",
+            dot: "bg-red-500"
         };
     } else {
-        statusLabel = "INSIDE";
+        // 🟢 ONLINE and INSIDE
+        statusLabel = "ONLINE";
         style = {
             badge: "bg-emerald-100 text-emerald-700",
-            border: "border-emerald-500"
+            border: "border-emerald-500",
+            dot: "bg-emerald-500"
         };
     }
 
@@ -40,9 +45,17 @@ export default function StationCard({ station }) {
         >
             {/* HEADER */}
             <div className="flex justify-between items-center mb-3">
-                <h4 className="font-bold text-slate-900 tracking-tight">
-                    {station.stationId || "—"}
-                </h4>
+                <div className="flex items-center gap-2">
+                    {/* Status Dot */}
+                    <span
+                        className={`h-2.5 w-2.5 rounded-full ${style.dot} ${isOnline ? "animate-pulse" : ""
+                            }`}
+                    ></span>
+
+                    <h4 className="font-bold text-slate-900 tracking-tight">
+                        {station.stationId || "—"}
+                    </h4>
+                </div>
 
                 <span
                     className={`text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wide ${style.badge}`}
