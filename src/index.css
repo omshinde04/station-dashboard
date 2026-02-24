@@ -48,3 +48,20 @@ body {
 .leaflet-popup-tip {
   background: white !important;
 }
+
+
+
+
+/* Fix Leaflet z-index issues */
+.leaflet-container {
+  z-index: 0 !important;
+}
+
+.leaflet-control {
+  z-index: 0 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 0 !important;
+}
