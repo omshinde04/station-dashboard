@@ -1,20 +1,33 @@
 export default function StationCard({ station }) {
-    const statusColors = {
-        INSIDE: {
-            badge: "bg-emerald-100 text-emerald-700",
-            border: "border-emerald-500"
-        },
-        OUTSIDE: {
-            badge: "bg-red-100 text-red-700",
-            border: "border-red-500"
-        },
-        OFFLINE: {
+    const now = Date.now();
+
+    // 🔥 Heartbeat check (2 minutes timeout)
+    const isOnline =
+        station.lastSeen && now - station.lastSeen < 120000;
+
+    // 🔥 Final status logic
+    let statusLabel;
+    let style;
+
+    if (!isOnline) {
+        statusLabel = "OFFLINE";
+        style = {
             badge: "bg-slate-100 text-slate-600",
             border: "border-slate-400"
-        }
-    };
-
-    const style = statusColors[station.status] || statusColors.OFFLINE;
+        };
+    } else if (station.status === "OUTSIDE") {
+        statusLabel = "OUTSIDE";
+        style = {
+            badge: "bg-red-100 text-red-700",
+            border: "border-red-500"
+        };
+    } else {
+        statusLabel = "INSIDE";
+        style = {
+            badge: "bg-emerald-100 text-emerald-700",
+            border: "border-emerald-500"
+        };
+    }
 
     return (
         <div
@@ -28,28 +41,36 @@ export default function StationCard({ station }) {
             {/* HEADER */}
             <div className="flex justify-between items-center mb-3">
                 <h4 className="font-bold text-slate-900 tracking-tight">
-                    {station.stationId}
+                    {station.stationId || "—"}
                 </h4>
 
-                <span className={`text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wide ${style.badge}`}>
-                    {station.status}
+                <span
+                    className={`text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wide ${style.badge}`}
+                >
+                    {statusLabel}
                 </span>
             </div>
 
             {/* COORDINATES */}
             <div className="text-xs font-mono text-slate-600 space-y-1">
                 <div>
-                    📍 <strong>Lat:</strong> {station.latitude?.toFixed(6) || "—"}
+                    📍 <strong>Lat:</strong>{" "}
+                    {station.latitude !== undefined
+                        ? station.latitude.toFixed(6)
+                        : "—"}
                 </div>
                 <div>
-                    📍 <strong>Lng:</strong> {station.longitude?.toFixed(6) || "—"}
+                    📍 <strong>Lng:</strong>{" "}
+                    {station.longitude !== undefined
+                        ? station.longitude.toFixed(6)
+                        : "—"}
                 </div>
             </div>
 
             {/* DISTANCE */}
             {station.distance !== undefined && (
                 <div className="mt-2 text-xs text-slate-500">
-                    📏 <strong>Distance:</strong> {station.distance || 0} m
+                    📏 <strong>Distance:</strong> {station.distance} m
                 </div>
             )}
 

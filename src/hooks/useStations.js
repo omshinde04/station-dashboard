@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 
 let socket;
@@ -27,7 +27,6 @@ async function reverseGeocode(lat, lng) {
 export function useStations(selectedDistrict, search) {
     const [stations, setStations] = useState({});
     const [connected, setConnected] = useState(false);
-    const offlineTimeoutRef = useRef({});
 
     /* ===============================
        INITIAL FETCH
@@ -67,7 +66,7 @@ export function useStations(selectedDistrict, search) {
                         assignedLatitude: station.assigned_latitude,
                         assignedLongitude: station.assigned_longitude,
                         allowedRadiusMeters: station.allowed_radius_meters,
-                        status: station.status || "OFFLINE",
+                        status: station.status || "INSIDE", // only geofence status
                         distance: station.distance_meters,
                         liveAddress,
                         assignedAddress,
@@ -78,7 +77,6 @@ export function useStations(selectedDistrict, search) {
                 }
 
                 setStations(formatted);
-
             } catch (err) {
                 console.error("Fetch stations error:", err);
             }
@@ -100,7 +98,6 @@ export function useStations(selectedDistrict, search) {
         socket.on("disconnect", () => setConnected(false));
 
         socket.on("locationUpdate", async (data) => {
-
             const {
                 stationId,
                 latitude,
@@ -112,7 +109,7 @@ export function useStations(selectedDistrict, search) {
                 allowedRadiusMeters
             } = data;
 
-            // Instant UI update
+            // 🔥 Instant update
             setStations(prev => ({
                 ...prev,
                 [stationId]: {
@@ -120,18 +117,16 @@ export function useStations(selectedDistrict, search) {
                     stationId,
                     latitude,
                     longitude,
-                    status,
+                    status, // only geofence status
                     distance,
                     assignedLatitude,
                     assignedLongitude,
                     allowedRadiusMeters,
-                    liveAddress: prev[stationId]?.liveAddress || "Resolving...",
-                    assignedAddress: prev[stationId]?.assignedAddress || "Resolving...",
                     lastSeen: Date.now()
                 }
             }));
 
-            // Resolve addresses in background
+            // 🔥 Background reverse geocode
             const liveAddress = await reverseGeocode(latitude, longitude);
             const assignedAddress = await reverseGeocode(
                 assignedLatitude,
@@ -146,21 +141,6 @@ export function useStations(selectedDistrict, search) {
                     assignedAddress
                 }
             }));
-
-            // Auto offline after 2 mins no update
-            if (offlineTimeoutRef.current[stationId]) {
-                clearTimeout(offlineTimeoutRef.current[stationId]);
-            }
-
-            offlineTimeoutRef.current[stationId] = setTimeout(() => {
-                setStations(prev => ({
-                    ...prev,
-                    [stationId]: {
-                        ...prev[stationId],
-                        status: "OFFLINE"
-                    }
-                }));
-            }, 120000);
         });
 
         return () => {
@@ -169,30 +149,32 @@ export function useStations(selectedDistrict, search) {
     }, []);
 
     /* ===============================
-       STATS
+       STATS (Correct Online Logic)
     ================================= */
     const stats = useMemo(() => {
         const values = Object.values(stations);
-
         const now = Date.now();
 
-        const online = values.filter(
-            s => s.lastSeen && now - s.lastSeen < 120000   // 2 minutes
+        const onlineCount = values.filter(
+            s => s.lastSeen && now - s.lastSeen < 120000
         ).length;
+
+        const offlineCount = values.length - onlineCount;
 
         return {
             total: values.length,
-            online,
+            online: onlineCount,
+            offline: offlineCount,
             inside: values.filter(s => s.status === "INSIDE").length,
-            outside: values.filter(s => s.status === "OUTSIDE").length,
-            offline: values.filter(s => s.status === "OFFLINE").length
+            outside: values.filter(s => s.status === "OUTSIDE").length
         };
     }, [stations]);
+
     /* ===============================
        FILTER + SORT
     ================================= */
     const sortedStations = useMemo(() => {
-        const priority = { OUTSIDE: 1, OFFLINE: 2, INSIDE: 3 };
+        const priority = { OUTSIDE: 1, INSIDE: 2 };
 
         return Object.values(stations)
             .filter(s => {
@@ -206,7 +188,7 @@ export function useStations(selectedDistrict, search) {
 
                 return matchesSearch && matchesDistrict;
             })
-            .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
+            .sort((a, b) => (priority[a.status] || 3) - (priority[b.status] || 3));
     }, [stations, search, selectedDistrict]);
 
     return { sortedStations, stats, connected };
