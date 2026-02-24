@@ -17,7 +17,7 @@ export default function Login({ onLogin }) {
             setLoading(true);
 
             const res = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/auth/login`,
+                `${process.env.REACT_APP_API_URL}/api/dashboard/login`,
                 { email, password },
                 {
                     headers: {
