@@ -1,14 +1,16 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from "../utils/axiosInstance"; // ✅ Use same axios instance
 import RailtailLogo from "../assets/images/railtail.png";
 
 export default function Login({ onLogin }) {
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
         try {
+
             if (!email || !password) {
                 alert("Please enter email and password");
                 return;
@@ -16,25 +18,29 @@ export default function Login({ onLogin }) {
 
             setLoading(true);
 
-            const res = await axios.post(
-                `${process.env.REACT_APP_API_URL}/api/dashboard/login`,
-                { email, password },
-                {
-                    headers: {
-                        "Content-Type": "application/json"
-                    }
-                }
-            );
+            const res = await axios.post("/api/dashboard/login", {
+                email,
+                password
+            });
 
+            if (!res.data?.token) {
+                alert("Invalid login response from server");
+                return;
+            }
+
+            // ✅ Save token
             localStorage.setItem("token", res.data.token);
 
+            // ✅ Update auth state
             onLogin();
 
         } catch (err) {
+
             console.error("Login error:", err.response?.data || err.message);
 
             alert(
-                err.response?.data?.message || "Login failed. Check credentials."
+                err.response?.data?.message ||
+                "Login failed. Check credentials."
             );
 
         } finally {
@@ -58,7 +64,7 @@ export default function Login({ onLogin }) {
 
                 <input
                     type="email"
-                    placeholder="tech.wcdrailtel@gmail.com"
+                    placeholder="Email"
                     className="w-full mb-4 p-3 rounded-xl bg-slate-100 ring-1 ring-slate-200 focus:ring-2 focus:ring-emerald-500 outline-none"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
