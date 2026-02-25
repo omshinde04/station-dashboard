@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import axios from "../utils/axiosInstance";
 import {
     PieChart,
@@ -12,16 +12,21 @@ import {
     YAxis,
     CartesianGrid,
     BarChart,
-    Bar
+    Bar,
+    Legend
 } from "recharts";
 
-const COLORS = ["#10B981", "#EF4444"]; // Emerald + Red
+const COLORS = {
+    INSIDE: "#10B981",
+    OUTSIDE: "#EF4444"
+};
 
 export default function AnalyticsSection() {
 
     const [statusData, setStatusData] = useState([]);
     const [dailyData, setDailyData] = useState([]);
     const [topStations, setTopStations] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchAnalytics();
@@ -29,68 +34,129 @@ export default function AnalyticsSection() {
 
     const fetchAnalytics = async () => {
         try {
-            const statusRes = await axios.get("/api/analytics/status");
-            const dailyRes = await axios.get("/api/analytics/daily?days=7");
-            const topRes = await axios.get("/api/analytics/top?limit=5");
+            setLoading(true);
 
-            const formattedStatus = [
-                { name: "Inside", value: statusRes.data.data.INSIDE },
-                { name: "Outside", value: statusRes.data.data.OUTSIDE }
-            ];
+            const [statusRes, dailyRes, topRes] = await Promise.all([
+                axios.get("/api/analytics/status"),
+                axios.get("/api/analytics/daily?days=7"),
+                axios.get("/api/analytics/top?limit=5")
+            ]);
 
-            setStatusData(formattedStatus);
-            setDailyData(dailyRes.data.data);
-            setTopStations(topRes.data.data);
+            const inside = statusRes.data.data.INSIDE || 0;
+            const outside = statusRes.data.data.OUTSIDE || 0;
+
+            setStatusData([
+                { name: "Inside Safe Zone", value: inside },
+                { name: "Outside Safe Zone", value: outside }
+            ]);
+
+            setDailyData(dailyRes.data.data || []);
+            setTopStations(topRes.data.data || []);
 
         } catch (err) {
             console.error("Analytics Fetch Error:", err);
+        } finally {
+            setLoading(false);
         }
     };
 
-    return (
-        <div className="mt-10 space-y-8">
+    /* ===============================
+       CALCULATED METRICS
+    ================================= */
+    const totalStations = useMemo(() => {
+        return statusData.reduce((sum, item) => sum + item.value, 0);
+    }, [statusData]);
 
-            {/* Section Title */}
+    const complianceRate = useMemo(() => {
+        const inside = statusData.find(s => s.name.includes("Inside"))?.value || 0;
+        if (totalStations === 0) return 0;
+        return Math.round((inside / totalStations) * 100);
+    }, [statusData, totalStations]);
+
+    if (loading) {
+        return (
+            <div className="mt-10 text-center text-slate-500">
+                Loading analytics...
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-12 space-y-10">
+
+            {/* ================= HEADER ================= */}
             <div>
-                <h2 className="text-2xl font-bold text-slate-800">
-                    📊 Analytics Overview
+                <h2 className="text-3xl font-bold text-slate-800">
+                    📊 System Analytics
                 </h2>
-                <p className="text-sm text-slate-500">
-                    Real-time monitoring & violation insights
+                <p className="text-sm text-slate-500 mt-1">
+                    Real-time compliance monitoring and violation insights
                 </p>
             </div>
 
-            {/* Top Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* ================= SUMMARY CARDS ================= */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                {/* Status Distribution */}
+                <SummaryCard
+                    title="Total Active Stations"
+                    value={totalStations}
+                    subtitle="Stations reporting status"
+                />
+
+                <SummaryCard
+                    title="Compliance Rate"
+                    value={`${complianceRate}%`}
+                    subtitle="Stations inside safe zone"
+                    highlight={complianceRate >= 80}
+                />
+
+                <SummaryCard
+                    title="Current Violations"
+                    value={
+                        statusData.find(s => s.name.includes("Outside"))?.value || 0
+                    }
+                    subtitle="Stations outside permitted radius"
+                    danger
+                />
+            </div>
+
+            {/* ================= STATUS DISTRIBUTION ================= */}
+            <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
+                <h3 className="text-lg font-semibold text-slate-700 mb-4">
+                    Live Station Status Distribution
+                </h3>
+
+                <ResponsiveContainer width="100%" height={320}>
+                    <PieChart>
+                        <Pie
+                            data={statusData}
+                            dataKey="value"
+                            outerRadius={110}
+                            label
+                        >
+                            {statusData.map((entry, index) => (
+                                <Cell
+                                    key={index}
+                                    fill={
+                                        entry.name.includes("Inside")
+                                            ? COLORS.INSIDE
+                                            : COLORS.OUTSIDE
+                                    }
+                                />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
+
+            {/* ================= TREND + TOP ================= */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Daily Trend */}
                 <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
-                    <h3 className="text-lg font-semibold mb-4 text-slate-700">
-                        Live Status Distribution
-                    </h3>
-
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={statusData}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={100}
-                                dataKey="value"
-                                label
-                            >
-                                {statusData.map((entry, index) => (
-                                    <Cell key={index} fill={COLORS[index]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-
-                {/* Daily Violations Trend */}
-                <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
-                    <h3 className="text-lg font-semibold mb-4 text-slate-700">
+                    <h3 className="text-lg font-semibold text-slate-700 mb-4">
                         7-Day Violation Trend
                     </h3>
 
@@ -105,30 +171,66 @@ export default function AnalyticsSection() {
                                 dataKey="count"
                                 stroke="#EF4444"
                                 strokeWidth={3}
+                                dot={{ r: 4 }}
                             />
                         </LineChart>
                     </ResponsiveContainer>
+
+                    <p className="text-xs text-slate-500 mt-3">
+                        Displays how many geofence violations occurred each day.
+                    </p>
+                </div>
+
+                {/* Top Violators */}
+                <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
+                    <h3 className="text-lg font-semibold text-slate-700 mb-4">
+                        Top Violating Stations
+                    </h3>
+
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={topStations}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="station_id" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar
+                                dataKey="violations"
+                                fill="#EF4444"
+                                radius={[6, 6, 0, 0]}
+                            />
+                        </BarChart>
+                    </ResponsiveContainer>
+
+                    <p className="text-xs text-slate-500 mt-3">
+                        Stations with highest number of outside-boundary incidents.
+                    </p>
                 </div>
 
             </div>
+        </div>
+    );
+}
 
-            {/* Bottom Row */}
-            <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
-                <h3 className="text-lg font-semibold mb-4 text-slate-700">
-                    Top Violating Stations
-                </h3>
+/* ===============================
+   SUMMARY CARD COMPONENT
+================================= */
+function SummaryCard({ title, value, subtitle, highlight, danger }) {
+    return (
+        <div className={`bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200`}>
+            <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
+                {title}
+            </h4>
 
-                <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={topStations}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="station_id" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="violations" fill="#EF4444" />
-                    </BarChart>
-                </ResponsiveContainer>
+            <div className={`text-3xl font-bold mt-2 ${danger ? "text-red-600" :
+                highlight ? "text-emerald-600" :
+                    "text-slate-900"
+                }`}>
+                {value}
             </div>
 
+            <p className="text-xs text-slate-500 mt-2">
+                {subtitle}
+            </p>
         </div>
     );
 }

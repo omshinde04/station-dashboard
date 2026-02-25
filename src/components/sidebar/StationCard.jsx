@@ -3,16 +3,11 @@ import { ChevronDown } from "lucide-react";
 
 export default function StationCard({ station }) {
     const [open, setOpen] = useState(false);
-    const now = Date.now();
-
-    // 🔥 Heartbeat check (2 minutes timeout)
-    const isOnline =
-        station.lastSeen && now - station.lastSeen < 120000;
 
     let statusLabel;
     let style;
 
-    if (!isOnline) {
+    if (station.status === "OFFLINE") {
         statusLabel = "OFFLINE";
         style = {
             badge: "bg-slate-100 text-slate-600",
@@ -44,14 +39,14 @@ export default function StationCard({ station }) {
         hover:shadow-md
       `}
         >
-            {/* 🔥 HEADER (Always Visible) */}
+            {/* HEADER */}
             <div
                 onClick={() => setOpen(!open)}
                 className="cursor-pointer flex justify-between items-center px-5 py-4"
             >
                 <div className="flex items-center gap-3">
                     <span
-                        className={`h-2.5 w-2.5 rounded-full ${style.dot} ${isOnline ? "animate-pulse" : ""
+                        className={`h-2.5 w-2.5 rounded-full ${style.dot} ${station.status !== "OFFLINE" ? "animate-pulse" : ""
                             }`}
                     ></span>
 
@@ -75,7 +70,7 @@ export default function StationCard({ station }) {
                 </div>
             </div>
 
-            {/* 🔥 COLLAPSIBLE CONTENT */}
+            {/* COLLAPSIBLE */}
             <div
                 className={`
           overflow-hidden transition-all duration-300 ease-in-out
@@ -84,7 +79,6 @@ export default function StationCard({ station }) {
             >
                 <div className="px-5 pb-5 border-t border-slate-100">
 
-                    {/* COORDINATES */}
                     <div className="mt-4 text-xs font-mono text-slate-600 space-y-1">
                         <div>
                             📍 <strong>Lat:</strong>{" "}
@@ -100,14 +94,12 @@ export default function StationCard({ station }) {
                         </div>
                     </div>
 
-                    {/* DISTANCE */}
                     {station.distance !== undefined && (
                         <div className="mt-3 text-xs text-slate-500">
                             📏 <strong>Distance:</strong> {station.distance} m
                         </div>
                     )}
 
-                    {/* ASSIGNED LOCATION */}
                     <div className="mt-3 text-xs text-slate-600">
                         🎯 <span className="font-semibold">Assigned Area:</span>
                         <div className="text-slate-500 mt-1 leading-relaxed">
@@ -115,22 +107,12 @@ export default function StationCard({ station }) {
                         </div>
                     </div>
 
-                    {/* CURRENT LOCATION */}
                     <div className="mt-3 text-xs text-slate-600">
                         🛰 <span className="font-semibold">Current Location:</span>
                         <div className="text-slate-500 mt-1 leading-relaxed">
                             {station.liveAddress || "Resolving..."}
                         </div>
                     </div>
-
-                    {/* LAST UPDATE */}
-                    <div className="mt-4 text-[10px] text-slate-400 border-t pt-3">
-                        ⏱ Last Update:{" "}
-                        {station.lastSeen
-                            ? new Date(station.lastSeen).toLocaleTimeString()
-                            : "—"}
-                    </div>
-
                 </div>
             </div>
         </div>
