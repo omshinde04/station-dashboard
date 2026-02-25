@@ -153,11 +153,18 @@ export function useStations(selectedDistrict, search) {
     const stats = useMemo(() => {
         const values = Object.values(stations);
 
+        const inside = values.filter(s => s.status === "INSIDE").length;
+        const outside = values.filter(s => s.status === "OUTSIDE").length;
+        const offline = values.filter(s => s.status === "OFFLINE").length;
+
+        const online = inside + outside;
+
         return {
             total: values.length,
-            inside: values.filter(s => s.status === "INSIDE").length,
-            outside: values.filter(s => s.status === "OUTSIDE").length,
-            offline: values.filter(s => s.status === "OFFLINE").length
+            online,
+            inside,
+            outside,
+            offline
         };
     }, [stations]);
 
