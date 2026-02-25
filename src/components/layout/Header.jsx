@@ -12,7 +12,17 @@ const districtMap = {
     "77": "Nashik",
     "78": "Dhule",
     "79": "Nandurbar",
-    "80": "Jalgaon"
+    "80": "Jalgaon",
+
+    // ✅ Newly Added
+    "81": "Wardha",
+    "82": "Gondia",
+    "83": "Gadchiroli",
+    "84": "Bhandara",
+    "85": "Washim",
+    "86": "Hingoli",
+    "87": "Jalna",
+    "88": "Ahilyanagar"
 };
 
 export default function Header({
