@@ -58,7 +58,7 @@ function App() {
             path="/analytics"
             element={<AnalyticsPage />}
           />
-
+          <Route path="/logs" element={<LogsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Layout>

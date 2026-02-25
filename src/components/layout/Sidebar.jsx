@@ -18,7 +18,7 @@ export default function Sidebar() {
                     icon={<BarChart3 size={18} />}
                     label="Analytics"
                 />
-
+                <NavItem to="/logs" icon={<FileText size={18} />} label="Logs" />
             </nav>
         </aside>
     );
