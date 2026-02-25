@@ -45,14 +45,12 @@ export function useStations(selectedDistrict, search) {
             try {
                 const res = await axios.get("/api/stations/all");
 
-                if (!res.data.success) {
-                    console.error("Stations API Error:", res.data.message);
-                    return;
-                }
+                // 🔥 DO NOT check res.data.success
+                const stationList = res.data.data || [];
 
                 const formatted = {};
 
-                for (const station of res.data.data || []) {
+                for (const station of stationList) {
 
                     let liveAddress = "";
                     let assignedAddress = "";
@@ -88,7 +86,10 @@ export function useStations(selectedDistrict, search) {
                 setStations(formatted);
 
             } catch (err) {
-                console.error("Fetch stations error:", err.response?.data || err.message);
+                console.error(
+                    "Fetch stations error:",
+                    err.response?.data || err.message
+                );
             }
         }
 
