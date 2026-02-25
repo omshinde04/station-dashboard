@@ -1,6 +1,6 @@
 import MapView from "../map/MapView";
 import Sidebar from "../sidebar/Sidebar";
-import AnalyticsSection from "../components/AnalyticsSection";
+import AnalyticsSection from "../AnalyticsSection";
 
 export default function MainLayout({ stations, stats }) {
     return (
