@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "../utils/axiosInstance";
 
 export default function LogsPage() {
@@ -12,7 +12,11 @@ export default function LogsPage() {
     const [totalPages, setTotalPages] = useState(1);
     const limit = 20;
 
-    const fetchLogs = async () => {
+    /* ===============================
+       FETCH LOGS (STABLE FUNCTION)
+    ================================= */
+    const fetchLogs = useCallback(async () => {
+
         if (!stationId) return;
 
         try {
@@ -33,11 +37,15 @@ export default function LogsPage() {
         } catch (err) {
             console.error("Fetch logs error:", err);
         }
-    };
 
+    }, [stationId, page, limit, from, to, status]);
+
+    /* ===============================
+       AUTO FETCH WHEN PAGE CHANGES
+    ================================= */
     useEffect(() => {
         fetchLogs();
-    }, [page]);
+    }, [fetchLogs]);
 
     return (
         <div className="space-y-6">
@@ -46,7 +54,7 @@ export default function LogsPage() {
                 Station Location Logs
             </h2>
 
-            {/* FILTERS */}
+            {/* ================= FILTERS ================= */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-white p-4 rounded-xl shadow">
 
                 <input
@@ -91,7 +99,7 @@ export default function LogsPage() {
                 </button>
             </div>
 
-            {/* TABLE */}
+            {/* ================= TABLE ================= */}
             <div className="bg-white rounded-xl shadow overflow-x-auto">
                 <table className="min-w-full text-sm text-left">
                     <thead className="bg-slate-100 text-slate-600">
@@ -113,8 +121,8 @@ export default function LogsPage() {
                                 <td className="px-4 py-3">{log.longitude}</td>
                                 <td className="px-4 py-3">{log.distance_meters}</td>
                                 <td className={`px-4 py-3 font-semibold ${log.status === "OUTSIDE"
-                                        ? "text-red-600"
-                                        : "text-emerald-600"
+                                    ? "text-red-600"
+                                    : "text-emerald-600"
                                     }`}>
                                     {log.status}
                                 </td>
@@ -124,7 +132,7 @@ export default function LogsPage() {
                 </table>
             </div>
 
-            {/* PAGINATION */}
+            {/* ================= PAGINATION ================= */}
             <div className="flex justify-between items-center">
                 <button
                     disabled={page === 1}
@@ -146,6 +154,7 @@ export default function LogsPage() {
                     Next
                 </button>
             </div>
+
         </div>
     );
 }
