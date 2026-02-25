@@ -25,6 +25,7 @@ async function reverseGeocode(lat, lng) {
         return "Unknown location";
     }
 }
+
 export function useStations(selectedDistrict, search) {
     const [stations, setStations] = useState({});
     const [connected, setConnected] = useState(false);
@@ -67,17 +68,15 @@ export function useStations(selectedDistrict, search) {
                         assignedLatitude: station.assigned_latitude,
                         assignedLongitude: station.assigned_longitude,
                         allowedRadiusMeters: station.allowed_radius_meters,
-                        status: station.status || "INSIDE", // only geofence status
+                        status: station.status, // 🔥 TRUST BACKEND
                         distance: station.distance_meters,
                         liveAddress,
-                        assignedAddress,
-                        lastSeen: station.updated_at
-                            ? new Date(station.updated_at).getTime()
-                            : null
+                        assignedAddress
                     };
                 }
 
                 setStations(formatted);
+
             } catch (err) {
                 console.error("Fetch stations error:", err);
             }
@@ -110,7 +109,7 @@ export function useStations(selectedDistrict, search) {
                 allowedRadiusMeters
             } = data;
 
-            // 🔥 Instant update
+            // 🔥 Update station live
             setStations(prev => ({
                 ...prev,
                 [stationId]: {
@@ -118,16 +117,15 @@ export function useStations(selectedDistrict, search) {
                     stationId,
                     latitude,
                     longitude,
-                    status, // only geofence status
+                    status, // backend-controlled
                     distance,
                     assignedLatitude,
                     assignedLongitude,
-                    allowedRadiusMeters,
-                    lastSeen: Date.now()
+                    allowedRadiusMeters
                 }
             }));
 
-            // 🔥 Background reverse geocode
+            // 🔥 Reverse geocode
             const liveAddress = await reverseGeocode(latitude, longitude);
             const assignedAddress = await reverseGeocode(
                 assignedLatitude,
@@ -150,24 +148,16 @@ export function useStations(selectedDistrict, search) {
     }, []);
 
     /* ===============================
-       STATS (Correct Online Logic)
+       CLEAN STATS (Backend Truth)
     ================================= */
     const stats = useMemo(() => {
         const values = Object.values(stations);
-        const now = Date.now();
-
-        const onlineCount = values.filter(
-            s => s.lastSeen && now - s.lastSeen < 120000
-        ).length;
-
-        const offlineCount = values.length - onlineCount;
 
         return {
             total: values.length,
-            online: onlineCount,
-            offline: offlineCount,
             inside: values.filter(s => s.status === "INSIDE").length,
-            outside: values.filter(s => s.status === "OUTSIDE").length
+            outside: values.filter(s => s.status === "OUTSIDE").length,
+            offline: values.filter(s => s.status === "OFFLINE").length
         };
     }, [stations]);
 
@@ -175,7 +165,7 @@ export function useStations(selectedDistrict, search) {
        FILTER + SORT
     ================================= */
     const sortedStations = useMemo(() => {
-        const priority = { OUTSIDE: 1, INSIDE: 2 };
+        const priority = { OUTSIDE: 1, INSIDE: 2, OFFLINE: 3 };
 
         return Object.values(stations)
             .filter(s => {
@@ -189,7 +179,7 @@ export function useStations(selectedDistrict, search) {
 
                 return matchesSearch && matchesDistrict;
             })
-            .sort((a, b) => (priority[a.status] || 3) - (priority[b.status] || 3));
+            .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
     }, [stations, search, selectedDistrict]);
 
     return { sortedStations, stats, connected };
