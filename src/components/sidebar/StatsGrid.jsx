@@ -8,49 +8,70 @@ import {
 import StatCard from "./StatCard";
 
 export default function StatsGrid({ stats }) {
-    const total = stats.total || 0;
 
-    const percentage = (value) =>
-        total ? ((value / total) * 100).toFixed(1) : 0;
+    const totalMachines = stats.total || 0;
+    const onlineMachines = stats.online || 0;
+    const inside = stats.inside || 0;
+    const outside = stats.outside || 0;
+    const offline = stats.offline || 0;
+
+    // 🔥 Percentages based on ONLINE machines only
+    const percentOnlineBased = (value) =>
+        onlineMachines > 0
+            ? ((value / onlineMachines) * 100).toFixed(1)
+            : 0;
+
+    // 🔥 Percentages based on TOTAL machines
+    const percentTotalBased = (value) =>
+        totalMachines > 0
+            ? ((value / totalMachines) * 100).toFixed(1)
+            : 0;
 
     return (
         <div className="grid grid-cols-2 gap-5">
 
+            {/* Total Machines */}
             <StatCard
                 title="Total Machines"
-                value={stats.total}
+                value={totalMachines}
                 icon={<Activity size={20} />}
                 color="blue"
             />
 
+            {/* Online Machines */}
             <StatCard
                 title="Online Machines"
-                value={stats.online}
+                value={onlineMachines}
                 icon={<Wifi size={20} />}
                 color="green"
+                percentage={percentTotalBased(onlineMachines)}
             />
+
+            {/* Inside */}
             <StatCard
                 title="Inside Perimeter"
-                value={stats.inside}
+                value={inside}
                 icon={<CheckCircle size={20} />}
                 color="green"
-                percentage={percentage(stats.inside)}
+                percentage={percentOnlineBased(inside)}
             />
 
+            {/* Outside */}
             <StatCard
                 title="Outside Safe Zone"
-                value={stats.outside}
+                value={outside}
                 icon={<AlertTriangle size={20} />}
                 color="red"
-                percentage={percentage(stats.outside)}
+                percentage={percentOnlineBased(outside)}
             />
 
+            {/* Offline */}
             <StatCard
                 title="Offline / Errors"
-                value={stats.offline}
+                value={offline}
                 icon={<WifiOff size={20} />}
                 color="gray"
-                percentage={percentage(stats.offline)}
+                percentage={percentTotalBased(offline)}
             />
 
         </div>
