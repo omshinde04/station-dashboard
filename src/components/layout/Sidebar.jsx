@@ -1,45 +1,45 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, BarChart3 } from "lucide-react";
-import AnalyticsSection from "../AnalyticsSection";
+import { NavLink } from "react-router-dom";
+import { Home, BarChart3 } from "lucide-react";
 
-export default function Sidebar() {
-    const [open, setOpen] = useState(true);
+export default function Sidebar({ open }) {
 
     return (
         <div
             className={`
-                h-screen bg-white shadow-xl border-r border-slate-200
-                transition-all duration-300 ease-in-out
-                ${open ? "w-[420px]" : "w-[70px]"}
+                bg-white shadow-lg border-r border-slate-200
+                transition-all duration-300
+                ${open ? "w-[220px]" : "w-[70px]"}
             `}
         >
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-                {open && (
-                    <div className="flex items-center gap-2">
-                        <BarChart3 size={18} />
-                        <span className="font-semibold text-slate-700">
-                            Analytics
-                        </span>
-                    </div>
-                )}
+            <div className="p-4 font-bold text-slate-700">
+                {open ? "GeoSentinel" : "GS"}
+            </div>
 
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="p-2 rounded-lg hover:bg-slate-100"
+            <nav className="mt-6 space-y-2 px-2">
+
+                <NavLink
+                    to="/"
+                    className={({ isActive }) =>
+                        `flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition
+                        ${isActive ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"}`
+                    }
                 >
-                    {open ? (
-                        <ChevronLeft size={18} />
-                    ) : (
-                        <ChevronRight size={18} />
-                    )}
-                </button>
-            </div>
+                    <Home size={18} />
+                    {open && "Dashboard"}
+                </NavLink>
 
-            {/* Content */}
-            <div className="overflow-y-auto h-[calc(100vh-70px)] p-4">
-                {open && <AnalyticsSection />}
-            </div>
+                <NavLink
+                    to="/analytics"
+                    className={({ isActive }) =>
+                        `flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition
+                        ${isActive ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50"}`
+                    }
+                >
+                    <BarChart3 size={18} />
+                    {open && "Analytics"}
+                </NavLink>
+
+            </nav>
         </div>
     );
 }

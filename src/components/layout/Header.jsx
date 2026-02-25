@@ -1,5 +1,11 @@
 import { useEffect, useState } from "react";
-import { Search, ChevronDown, LogOut, User } from "lucide-react";
+import {
+    Search,
+    ChevronDown,
+    LogOut,
+    User,
+    Menu
+} from "lucide-react";
 import RailtailLogo from "../../assets/images/railtail.png";
 
 const districtMap = {
@@ -13,8 +19,6 @@ const districtMap = {
     "78": "Dhule",
     "79": "Nandurbar",
     "80": "Jalgaon",
-
-    // ✅ Newly Added
     "81": "Wardha",
     "82": "Gondia",
     "83": "Gadchiroli",
@@ -26,6 +30,7 @@ const districtMap = {
 };
 
 export default function Header({
+    toggleSidebar, // 👈 NEW (hamburger control)
     search,
     setSearch,
     selectedDistrict,
@@ -33,9 +38,10 @@ export default function Header({
     connected,
     onLogout
 }) {
+
     const [time, setTime] = useState(new Date());
 
-    // 🔐 Decode logged-in email from token
+    // 🔐 Decode JWT
     const token = localStorage.getItem("token");
     let userEmail = "";
 
@@ -46,6 +52,7 @@ export default function Header({
         } catch { }
     }
 
+    // ⏰ Live Clock
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
@@ -53,34 +60,43 @@ export default function Header({
 
     return (
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
-            <div className="max-w-[1600px] mx-auto px-6 py-4 flex justify-between items-center">
+            <div className="w-full px-6 py-4 flex justify-between items-center">
 
-                {/* LEFT SIDE - BRANDING */}
+                {/* ================= LEFT SECTION ================= */}
                 <div className="flex items-center gap-5">
 
+                    {/* Hamburger */}
+                    <button
+                        onClick={toggleSidebar}
+                        className="p-2 rounded-lg hover:bg-slate-100 transition"
+                    >
+                        <Menu size={20} />
+                    </button>
+
+                    {/* Logo */}
                     <img
                         src={RailtailLogo}
                         alt="Railtail Logo"
-                        className="h-10 object-contain"
+                        className="h-9 object-contain"
                     />
 
                     <div className="h-8 w-px bg-slate-300" />
 
                     <div className="flex flex-col">
-                        <h1 className="text-xl font-bold text-slate-900 tracking-tight">
+                        <h1 className="text-lg font-bold text-slate-900 tracking-tight">
                             Railtail
                         </h1>
-                        <span className="text-[11px] uppercase tracking-widest text-emerald-600 font-semibold">
+                        <span className="text-[10px] uppercase tracking-widest text-emerald-600 font-semibold">
                             Command Center
                         </span>
                     </div>
                 </div>
 
-                {/* RIGHT SIDE CONTROLS */}
-                <div className="flex items-center gap-6">
+                {/* ================= RIGHT SECTION ================= */}
+                <div className="flex items-center gap-5">
 
-                    {/* SEARCH */}
-                    <div className="relative">
+                    {/* Search */}
+                    <div className="relative hidden md:block">
                         <Search
                             size={16}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -89,18 +105,18 @@ export default function Header({
                             placeholder="Search stations..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-10 w-64 pl-9 pr-4 rounded-xl bg-slate-100/70 text-sm 
+                            className="h-9 w-60 pl-9 pr-4 rounded-xl bg-slate-100/70 text-sm 
                             ring-1 ring-slate-200 focus:ring-2 focus:ring-emerald-500
                             transition-all outline-none"
                         />
                     </div>
 
-                    {/* DISTRICT SELECT */}
-                    <div className="relative">
+                    {/* District Select */}
+                    <div className="relative hidden md:block">
                         <select
                             value={selectedDistrict}
                             onChange={(e) => setSelectedDistrict(e.target.value)}
-                            className="appearance-none h-10 pl-4 pr-10 rounded-xl bg-white 
+                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white 
                             text-sm font-medium ring-1 ring-slate-200
                             hover:ring-slate-300 focus:ring-2 focus:ring-emerald-500
                             transition-all outline-none"
@@ -114,14 +130,14 @@ export default function Header({
                         </select>
 
                         <ChevronDown
-                            size={16}
+                            size={14}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                         />
                     </div>
 
-                    {/* CONNECTION STATUS */}
+                    {/* Connection Status */}
                     <div
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider
                         ${connected
                                 ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-500/30"
                                 : "bg-red-50 text-red-600 ring-1 ring-red-500/30"
@@ -142,26 +158,26 @@ export default function Header({
                             />
                         </span>
 
-                        {connected ? "System Live" : "Disconnected"}
+                        {connected ? "Live" : "Offline"}
                     </div>
 
-                    {/* CLOCK */}
-                    <div className="px-4 py-2 bg-slate-100/80 rounded-xl font-mono text-sm font-medium text-slate-700 shadow-inner">
+                    {/* Clock */}
+                    <div className="hidden lg:block px-3 py-1.5 bg-slate-100/80 rounded-xl font-mono text-xs font-medium text-slate-700 shadow-inner">
                         {time.toLocaleTimeString()}
                     </div>
 
-                    {/* USER INFO */}
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 ring-1 ring-slate-200">
-                        <User size={16} className="text-slate-500" />
+                    {/* User */}
+                    <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 ring-1 ring-slate-200">
+                        <User size={14} className="text-slate-500" />
                         <span className="text-xs font-medium text-slate-700">
                             {userEmail}
                         </span>
                     </div>
 
-                    {/* LOGOUT */}
+                    {/* Logout */}
                     <button
                         onClick={onLogout}
-                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-50 
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 
                         text-red-600 text-xs font-bold uppercase tracking-wider 
                         ring-1 ring-red-200 hover:bg-red-100 transition-all"
                     >

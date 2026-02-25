@@ -21,7 +21,7 @@ const COLORS = {
     OUTSIDE: "#EF4444"
 };
 
-export default function AnalyticsSection() {
+export default function AnalyticsPage() {
 
     const [statusData, setStatusData] = useState([]);
     const [dailyData, setDailyData] = useState([]);
@@ -60,9 +60,6 @@ export default function AnalyticsSection() {
         }
     };
 
-    /* ===============================
-       CALCULATED METRICS
-    ================================= */
     const totalStations = useMemo(() => {
         return statusData.reduce((sum, item) => sum + item.value, 0);
     }, [statusData]);
@@ -75,16 +72,16 @@ export default function AnalyticsSection() {
 
     if (loading) {
         return (
-            <div className="mt-10 text-center text-slate-500">
+            <div className="text-center mt-20 text-slate-500 text-lg">
                 Loading analytics...
             </div>
         );
     }
 
     return (
-        <div className="mt-12 space-y-10">
+        <div className="max-w-[1600px] mx-auto space-y-12">
 
-            {/* ================= HEADER ================= */}
+            {/* HEADER */}
             <div>
                 <h2 className="text-3xl font-bold text-slate-800">
                     📊 System Analytics
@@ -94,7 +91,7 @@ export default function AnalyticsSection() {
                 </p>
             </div>
 
-            {/* ================= SUMMARY CARDS ================= */}
+            {/* SUMMARY */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
                 <SummaryCard
@@ -120,7 +117,7 @@ export default function AnalyticsSection() {
                 />
             </div>
 
-            {/* ================= STATUS DISTRIBUTION ================= */}
+            {/* STATUS PIE */}
             <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
                 <h3 className="text-lg font-semibold text-slate-700 mb-4">
                     Live Station Status Distribution
@@ -128,12 +125,7 @@ export default function AnalyticsSection() {
 
                 <ResponsiveContainer width="100%" height={320}>
                     <PieChart>
-                        <Pie
-                            data={statusData}
-                            dataKey="value"
-                            outerRadius={110}
-                            label
-                        >
+                        <Pie data={statusData} dataKey="value" outerRadius={110} label>
                             {statusData.map((entry, index) => (
                                 <Cell
                                     key={index}
@@ -151,10 +143,9 @@ export default function AnalyticsSection() {
                 </ResponsiveContainer>
             </div>
 
-            {/* ================= TREND + TOP ================= */}
+            {/* TREND + TOP */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Daily Trend */}
                 <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
                     <h3 className="text-lg font-semibold text-slate-700 mb-4">
                         7-Day Violation Trend
@@ -175,13 +166,8 @@ export default function AnalyticsSection() {
                             />
                         </LineChart>
                     </ResponsiveContainer>
-
-                    <p className="text-xs text-slate-500 mt-3">
-                        Displays how many geofence violations occurred each day.
-                    </p>
                 </div>
 
-                {/* Top Violators */}
                 <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
                     <h3 className="text-lg font-semibold text-slate-700 mb-4">
                         Top Violating Stations
@@ -200,10 +186,6 @@ export default function AnalyticsSection() {
                             />
                         </BarChart>
                     </ResponsiveContainer>
-
-                    <p className="text-xs text-slate-500 mt-3">
-                        Stations with highest number of outside-boundary incidents.
-                    </p>
                 </div>
 
             </div>
@@ -211,19 +193,18 @@ export default function AnalyticsSection() {
     );
 }
 
-/* ===============================
-   SUMMARY CARD COMPONENT
-================================= */
 function SummaryCard({ title, value, subtitle, highlight, danger }) {
     return (
-        <div className={`bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200`}>
+        <div className="bg-white rounded-2xl shadow-md p-6 ring-1 ring-slate-200">
             <h4 className="text-sm font-semibold text-slate-500 uppercase tracking-wide">
                 {title}
             </h4>
 
-            <div className={`text-3xl font-bold mt-2 ${danger ? "text-red-600" :
-                highlight ? "text-emerald-600" :
-                    "text-slate-900"
+            <div className={`text-3xl font-bold mt-2 ${danger
+                ? "text-red-600"
+                : highlight
+                    ? "text-emerald-600"
+                    : "text-slate-900"
                 }`}>
                 {value}
             </div>

@@ -1,54 +1,68 @@
 import { useState } from "react";
-import Header from "./components/layout/Header";
-import MainLayout from "./components/layout/MainLayout";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import Layout from "./components/layout/Layout";
+import Dashboard from "./pages/Dashboard";
+import AnalyticsPage from "./pages/AnalyticsPage";
 import { useStations } from "./hooks/useStations";
 
 function App() {
 
+  // 🔐 Authentication
   const [isAuthenticated, setIsAuthenticated] = useState(
     !!localStorage.getItem("token")
   );
 
+  // 🔎 Filters
   const [search, setSearch] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("ALL");
 
-  // ✅ ALWAYS call hook (React rule)
+  // 🚀 Stations Hook (always called — React rule)
   const { sortedStations, stats, connected } =
     useStations(selectedDistrict, search);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  const handleLogin = () => setIsAuthenticated(true);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsAuthenticated(false);
   };
 
-  // 🔐 If not authenticated → show login
+  // 🔒 Show login if not authenticated
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-100">
-
-      <Header
+    <Router>
+      <Layout
         search={search}
         setSearch={setSearch}
         selectedDistrict={selectedDistrict}
         setSelectedDistrict={setSelectedDistrict}
         connected={connected}
         onLogout={handleLogout}
-      />
+      >
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Dashboard
+                stations={sortedStations}
+                stats={stats}
+              />
+            }
+          />
 
-      <MainLayout
-        stations={sortedStations}
-        stats={stats}
-      />
+          <Route
+            path="/analytics"
+            element={<AnalyticsPage />}
+          />
 
-    </div>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Layout>
+    </Router>
   );
 }
 
