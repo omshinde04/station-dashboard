@@ -3,8 +3,7 @@ import {
     Search,
     ChevronDown,
     LogOut,
-    User,
-    Menu
+    User
 } from "lucide-react";
 import RailtailLogo from "../../assets/images/railtail.png";
 
@@ -30,7 +29,6 @@ const districtMap = {
 };
 
 export default function Header({
-    toggleSidebar, // 👈 NEW (hamburger control)
     search,
     setSearch,
     selectedDistrict,
@@ -64,6 +62,7 @@ export default function Header({
 
                 {/* ================= LEFT SECTION ================= */}
                 <div className="flex items-center gap-5">
+
                     {/* Logo */}
                     <img
                         src={RailtailLogo}
