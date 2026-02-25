@@ -2,66 +2,70 @@ import { NavLink } from "react-router-dom";
 import { Home, BarChart3, X } from "lucide-react";
 
 export default function Sidebar({ open, onClose }) {
-
     return (
         <>
-            {/* OVERLAY (for mobile) */}
+            {/* Overlay */}
             {open && (
                 <div
+                    className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
                     onClick={onClose}
-                    className="fixed inset-0 bg-black/30 z-40 lg:hidden"
                 />
             )}
 
-            <div
+            <aside
                 className={`
-                    fixed lg:relative z-50
-                    h-full bg-white shadow-xl
-                    transition-all duration-300 ease-in-out
-                    ${open ? "w-64 translate-x-0" : "w-0 -translate-x-full lg:w-20 lg:translate-x-0"}
-                    overflow-hidden
-                `}
+          fixed top-0 left-0 z-50
+          h-full w-64
+          bg-slate-900 text-white
+          transform transition-transform duration-300 ease-in-out
+          ${open ? "translate-x-0" : "-translate-x-full"}
+        `}
             >
-
-                {/* CLOSE BUTTON (mobile) */}
-                <div className="flex justify-end p-4 lg:hidden">
+                {/* Header */}
+                <div className="flex items-center justify-between p-5 border-b border-slate-700">
+                    <span className="text-lg font-semibold tracking-wide">
+                        Navigation
+                    </span>
                     <button onClick={onClose}>
                         <X size={20} />
                     </button>
                 </div>
 
-                <nav className="mt-6 space-y-2 px-3">
+                {/* Menu */}
+                <nav className="mt-6 px-4 space-y-2">
 
                     <NavLink
                         to="/"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition
-                             ${isActive
-                                ? "bg-slate-100 text-slate-900"
-                                : "text-slate-600 hover:bg-slate-50"}`
-                        }
                         onClick={onClose}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition
+              ${isActive
+                                ? "bg-slate-800 text-white"
+                                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            }`
+                        }
                     >
                         <Home size={18} />
-                        {open && "Dashboard"}
+                        Dashboard
                     </NavLink>
 
                     <NavLink
                         to="/analytics"
-                        className={({ isActive }) =>
-                            `flex items-center gap-3 p-3 rounded-xl text-sm font-medium transition
-                             ${isActive
-                                ? "bg-slate-100 text-slate-900"
-                                : "text-slate-600 hover:bg-slate-50"}`
-                        }
                         onClick={onClose}
+                        className={({ isActive }) =>
+                            `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition
+              ${isActive
+                                ? "bg-slate-800 text-white"
+                                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            }`
+                        }
                     >
                         <BarChart3 size={18} />
-                        {open && "Analytics"}
+                        Analytics
                     </NavLink>
 
                 </nav>
-            </div>
+            </aside>
         </>
     );
 }

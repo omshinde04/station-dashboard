@@ -11,24 +11,20 @@ export default function Layout({
     connected,
     onLogout
 }) {
-
-    // ✅ START CLOSED
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen bg-slate-100 overflow-hidden">
+        <div className="relative min-h-screen bg-slate-100">
 
-            {/* SIDEBAR */}
             <Sidebar
                 open={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
             />
 
-            {/* MAIN CONTENT */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex flex-col min-h-screen">
 
                 <Header
-                    toggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+                    toggleSidebar={() => setSidebarOpen(true)}
                     search={search}
                     setSearch={setSearch}
                     selectedDistrict={selectedDistrict}
@@ -37,9 +33,9 @@ export default function Layout({
                     onLogout={onLogout}
                 />
 
-                <div className="flex-1 overflow-auto p-6">
+                <main className="flex-1 p-6">
                     {children}
-                </div>
+                </main>
 
             </div>
         </div>
