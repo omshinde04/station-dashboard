@@ -64,15 +64,6 @@ export default function Header({
 
                 {/* ================= LEFT SECTION ================= */}
                 <div className="flex items-center gap-5">
-
-                    {/* Hamburger */}
-                    <button
-                        onClick={toggleSidebar}
-                        className="p-2 rounded-lg hover:bg-slate-100 transition"
-                    >
-                        <Menu size={20} />
-                    </button>
-
                     {/* Logo */}
                     <img
                         src={RailtailLogo}
