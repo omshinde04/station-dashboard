@@ -5,6 +5,7 @@ import Layout from "./components/layout/Layout";
 import Dashboard from "./pages/Dashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { useStations } from "./hooks/useStations";
+import LogsPage from "./pages/LogsPage";
 
 function App() {
 
