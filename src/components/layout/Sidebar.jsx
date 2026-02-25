@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, BarChart3 } from "lucide-react";
+import { Home, BarChart3, FileText } from "lucide-react";
 
 export default function Sidebar() {
     return (
