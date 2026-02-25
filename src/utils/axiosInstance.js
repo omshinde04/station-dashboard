@@ -22,9 +22,7 @@ instance.interceptors.request.use(
 
         return config;
     },
-    (error) => {
-        return Promise.reject(error);
-    }
+    (error) => Promise.reject(error)
 );
 
 /* ==============================
@@ -34,14 +32,16 @@ instance.interceptors.response.use(
     (response) => response,
     (error) => {
 
-        if (error.response) {
+        if (error.response?.status === 401) {
 
-            // 🔥 If token expired or invalid → force logout
-            if (error.response.status === 401) {
-                console.warn("Session expired. Logging out...");
-                localStorage.removeItem("token");
+            console.warn("Session expired or unauthorized.");
 
-                // Optional: redirect to login
+            const currentPath = window.location.pathname;
+
+            localStorage.removeItem("token");
+
+            // ✅ Prevent infinite refresh loop
+            if (currentPath !== "/") {
                 window.location.href = "/";
             }
         }

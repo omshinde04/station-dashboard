@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
-import axios from "../utils/axiosInstance"; // ✅ USE AXIOS INSTANCE
+import axios from "../utils/axiosInstance";
 
 let socket;
 const addressCache = new Map();
@@ -41,13 +41,14 @@ export function useStations(selectedDistrict, search) {
     ================================= */
     useEffect(() => {
 
+        const token = localStorage.getItem("token");
+        if (!token) return; // ✅ Prevent API call if not logged in
+
         async function fetchStations() {
             try {
                 const res = await axios.get("/api/stations/all");
 
-                // 🔥 DO NOT check res.data.success
                 const stationList = res.data.data || [];
-
                 const formatted = {};
 
                 for (const station of stationList) {
@@ -101,6 +102,9 @@ export function useStations(selectedDistrict, search) {
        SOCKET CONNECTION
     ================================= */
     useEffect(() => {
+
+        const token = localStorage.getItem("token");
+        if (!token) return; // ✅ Prevent socket before login
 
         socket = io(process.env.REACT_APP_API_URL, {
             transports: ["websocket"],
@@ -161,7 +165,7 @@ export function useStations(selectedDistrict, search) {
     }, []);
 
     /* ===============================
-       STATS (ONLINE FIXED)
+       STATS
     ================================= */
     const stats = useMemo(() => {
 
