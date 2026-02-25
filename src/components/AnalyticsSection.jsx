@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "../api/axiosInstance";
+import axios from "../utils/axiosInstance";
 import {
     PieChart,
     Pie,
