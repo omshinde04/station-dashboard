@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
+import axios from "../utils/axiosInstance"; // ✅ USE AXIOS INSTANCE
 
 let socket;
 const addressCache = new Map();
 
+/* ===============================
+   REVERSE GEOCODE
+================================= */
 async function reverseGeocode(lat, lng) {
     if (!lat || !lng) return "";
 
@@ -11,13 +15,11 @@ async function reverseGeocode(lat, lng) {
     if (addressCache.has(key)) return addressCache.get(key);
 
     try {
-        const res = await fetch(
-            `${process.env.REACT_APP_API_URL}/api/geocode?lat=${lat}&lng=${lng}`
-        );
+        const res = await axios.get("/api/geocode", {
+            params: { lat, lng }
+        });
 
-        const data = await res.json();
-        const address = data.display_name || "Unknown location";
-
+        const address = res.data.display_name || "Unknown location";
         addressCache.set(key, address);
         return address;
 
@@ -26,24 +28,32 @@ async function reverseGeocode(lat, lng) {
     }
 }
 
+/* ===============================
+   MAIN HOOK
+================================= */
 export function useStations(selectedDistrict, search) {
+
     const [stations, setStations] = useState({});
     const [connected, setConnected] = useState(false);
 
     /* ===============================
-       INITIAL FETCH
+       INITIAL FETCH (PROTECTED)
     ================================= */
     useEffect(() => {
+
         async function fetchStations() {
             try {
-                const res = await fetch(
-                    `${process.env.REACT_APP_API_URL}/api/stations/all`
-                );
+                const res = await axios.get("/api/stations/all");
 
-                const data = await res.json();
+                if (!res.data.success) {
+                    console.error("Stations API Error:", res.data.message);
+                    return;
+                }
+
                 const formatted = {};
 
-                for (const station of data.data) {
+                for (const station of res.data.data || []) {
+
                     let liveAddress = "";
                     let assignedAddress = "";
 
@@ -68,7 +78,7 @@ export function useStations(selectedDistrict, search) {
                         assignedLatitude: station.assigned_latitude,
                         assignedLongitude: station.assigned_longitude,
                         allowedRadiusMeters: station.allowed_radius_meters,
-                        status: station.status, // 🔥 TRUST BACKEND
+                        status: station.status,
                         distance: station.distance_meters,
                         liveAddress,
                         assignedAddress
@@ -78,17 +88,19 @@ export function useStations(selectedDistrict, search) {
                 setStations(formatted);
 
             } catch (err) {
-                console.error("Fetch stations error:", err);
+                console.error("Fetch stations error:", err.response?.data || err.message);
             }
         }
 
         fetchStations();
+
     }, []);
 
     /* ===============================
        SOCKET CONNECTION
     ================================= */
     useEffect(() => {
+
         socket = io(process.env.REACT_APP_API_URL, {
             transports: ["websocket"],
             reconnection: true
@@ -98,6 +110,7 @@ export function useStations(selectedDistrict, search) {
         socket.on("disconnect", () => setConnected(false));
 
         socket.on("locationUpdate", async (data) => {
+
             const {
                 stationId,
                 latitude,
@@ -109,7 +122,6 @@ export function useStations(selectedDistrict, search) {
                 allowedRadiusMeters
             } = data;
 
-            // 🔥 Update station live
             setStations(prev => ({
                 ...prev,
                 [stationId]: {
@@ -117,7 +129,7 @@ export function useStations(selectedDistrict, search) {
                     stationId,
                     latitude,
                     longitude,
-                    status, // backend-controlled
+                    status,
                     distance,
                     assignedLatitude,
                     assignedLongitude,
@@ -125,7 +137,6 @@ export function useStations(selectedDistrict, search) {
                 }
             }));
 
-            // 🔥 Reverse geocode
             const liveAddress = await reverseGeocode(latitude, longitude);
             const assignedAddress = await reverseGeocode(
                 assignedLatitude,
@@ -145,12 +156,14 @@ export function useStations(selectedDistrict, search) {
         return () => {
             if (socket) socket.disconnect();
         };
+
     }, []);
 
     /* ===============================
-       CLEAN STATS (Backend Truth)
+       STATS (ONLINE FIXED)
     ================================= */
     const stats = useMemo(() => {
+
         const values = Object.values(stations);
 
         const inside = values.filter(s => s.status === "INSIDE").length;
@@ -166,27 +179,35 @@ export function useStations(selectedDistrict, search) {
             outside,
             offline
         };
+
     }, [stations]);
 
     /* ===============================
        FILTER + SORT
     ================================= */
     const sortedStations = useMemo(() => {
+
         const priority = { OUTSIDE: 1, INSIDE: 2, OFFLINE: 3 };
 
         return Object.values(stations)
             .filter(s => {
+
                 const matchesSearch =
                     s.stationId?.toLowerCase().includes(search.toLowerCase());
 
                 const districtCode = s.stationId?.slice(0, 2);
+
                 const matchesDistrict =
                     selectedDistrict === "ALL" ||
                     districtCode === selectedDistrict;
 
                 return matchesSearch && matchesDistrict;
+
             })
-            .sort((a, b) => (priority[a.status] || 4) - (priority[b.status] || 4));
+            .sort((a, b) =>
+                (priority[a.status] || 4) - (priority[b.status] || 4)
+            );
+
     }, [stations, search, selectedDistrict]);
 
     return { sortedStations, stats, connected };
