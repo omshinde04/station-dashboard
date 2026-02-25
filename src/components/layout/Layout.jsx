@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
@@ -11,20 +10,14 @@ export default function Layout({
     connected,
     onLogout
 }) {
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-
     return (
-        <div className="relative min-h-screen bg-slate-100">
+        <div className="flex min-h-screen bg-slate-100">
 
-            <Sidebar
-                open={sidebarOpen}
-                onClose={() => setSidebarOpen(false)}
-            />
+            <Sidebar />
 
-            <div className="flex flex-col min-h-screen">
+            <div className="flex-1 ml-20">
 
                 <Header
-                    toggleSidebar={() => setSidebarOpen(true)}
                     search={search}
                     setSearch={setSearch}
                     selectedDistrict={selectedDistrict}
@@ -33,7 +26,7 @@ export default function Layout({
                     onLogout={onLogout}
                 />
 
-                <main className="flex-1 p-6">
+                <main className="p-6">
                     {children}
                 </main>
 
