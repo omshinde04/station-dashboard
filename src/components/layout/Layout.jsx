@@ -11,13 +11,20 @@ export default function Layout({
     connected,
     onLogout
 }) {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    // ✅ START CLOSED
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen bg-slate-100">
+        <div className="flex h-screen bg-slate-100 overflow-hidden">
 
-            <Sidebar open={sidebarOpen} />
+            {/* SIDEBAR */}
+            <Sidebar
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+            />
 
+            {/* MAIN CONTENT */}
             <div className="flex-1 flex flex-col">
 
                 <Header
