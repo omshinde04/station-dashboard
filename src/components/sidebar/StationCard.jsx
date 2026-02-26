@@ -30,14 +30,30 @@ export default function StationCard({ station }) {
         };
     }
 
+    // 🔥 SAFE FORMATTERS
+    const formattedLat =
+        station.latitude != null
+            ? Number(station.latitude).toFixed(6)
+            : "—";
+
+    const formattedLng =
+        station.longitude != null
+            ? Number(station.longitude).toFixed(6)
+            : "—";
+
+    const formattedDistance =
+        station.distance != null
+            ? `${Number(station.distance).toFixed(2)} m`
+            : null;
+
     return (
         <div
             className={`
-        bg-white rounded-2xl shadow-sm
-        border-l-4 ${style.border}
-        transition-all duration-300
-        hover:shadow-md
-      `}
+                bg-white rounded-2xl shadow-sm
+                border-l-4 ${style.border}
+                transition-all duration-300
+                hover:shadow-md
+            `}
         >
             {/* HEADER */}
             <div
@@ -73,33 +89,30 @@ export default function StationCard({ station }) {
             {/* COLLAPSIBLE */}
             <div
                 className={`
-          overflow-hidden transition-all duration-300 ease-in-out
-          ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
-        `}
+                    overflow-hidden transition-all duration-300 ease-in-out
+                    ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
+                `}
             >
                 <div className="px-5 pb-5 border-t border-slate-100">
 
+                    {/* Coordinates */}
                     <div className="mt-4 text-xs font-mono text-slate-600 space-y-1">
                         <div>
-                            📍 <strong>Lat:</strong>{" "}
-                            {station.latitude !== undefined
-                                ? station.latitude.toFixed(6)
-                                : "—"}
+                            📍 <strong>Lat:</strong> {formattedLat}
                         </div>
                         <div>
-                            📍 <strong>Lng:</strong>{" "}
-                            {station.longitude !== undefined
-                                ? station.longitude.toFixed(6)
-                                : "—"}
+                            📍 <strong>Lng:</strong> {formattedLng}
                         </div>
                     </div>
 
-                    {station.distance !== undefined && (
+                    {/* Distance */}
+                    {formattedDistance && (
                         <div className="mt-3 text-xs text-slate-500">
-                            📏 <strong>Distance:</strong> {station.distance} m
+                            📏 <strong>Distance:</strong> {formattedDistance}
                         </div>
                     )}
 
+                    {/* Assigned Area */}
                     <div className="mt-3 text-xs text-slate-600">
                         🎯 <span className="font-semibold">Assigned Area:</span>
                         <div className="text-slate-500 mt-1 leading-relaxed">
@@ -107,6 +120,7 @@ export default function StationCard({ station }) {
                         </div>
                     </div>
 
+                    {/* Current Location */}
                     <div className="mt-3 text-xs text-slate-600">
                         🛰 <span className="font-semibold">Current Location:</span>
                         <div className="text-slate-500 mt-1 leading-relaxed">
