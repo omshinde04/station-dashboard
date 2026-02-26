@@ -30,6 +30,8 @@ export default function StationsPage() {
     const [editForm, setEditForm] = useState({});
     const [search, setSearch] = useState("");
     const [selectedDistrict, setSelectedDistrict] = useState("ALL");
+    const [bulkPreview, setBulkPreview] = useState([]);
+    const [uploading, setUploading] = useState(false);
 
     const [form, setForm] = useState({
         station_id: "",
@@ -49,6 +51,55 @@ export default function StationsPage() {
 
         return () => clearInterval(interval);
     }, []);
+
+    function handleExcelUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+
+        reader.onload = (evt) => {
+            const data = new Uint8Array(evt.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+            // Normalize keys
+            const formatted = jsonData.map(row => ({
+                station_id: String(row.station_id || row.StationID || "").trim(),
+                assigned_latitude: Number(row.assigned_latitude || row.latitude),
+                assigned_longitude: Number(row.assigned_longitude || row.longitude),
+                allowed_radius_meters: Number(row.allowed_radius_meters || 300)
+            }));
+
+            setBulkPreview(formatted);
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
+    async function handleBulkSubmit() {
+        try {
+            setUploading(true);
+
+            await axios.post("/api/admin/stations/bulk", {
+                stations: bulkPreview
+            });
+
+            setBulkPreview([]);
+            fetchStations();
+
+            alert("Bulk upload successful");
+
+        } catch (err) {
+            alert(err.response?.data?.message || "Bulk upload failed");
+        } finally {
+            setUploading(false);
+        }
+    }
 
     async function fetchStations() {
         try {
@@ -168,7 +219,54 @@ export default function StationsPage() {
                     ))}
                 </select>
             </div>
+            {/* ================= BULK UPLOAD ================= */}
+            <div className="bg-white p-6 rounded-2xl shadow border border-slate-200">
+                <h3 className="text-lg font-semibold mb-4">
+                    Bulk Upload Stations (Excel)
+                </h3>
 
+                <input
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    onChange={handleExcelUpload}
+                    className="mb-4"
+                />
+
+                {bulkPreview.length > 0 && (
+                    <>
+                        <div className="max-h-60 overflow-auto border rounded mb-4">
+                            <table className="w-full text-xs">
+                                <thead className="bg-slate-100">
+                                    <tr>
+                                        <th className="p-2">Station ID</th>
+                                        <th className="p-2">Latitude</th>
+                                        <th className="p-2">Longitude</th>
+                                        <th className="p-2">Radius</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bulkPreview.map((row, index) => (
+                                        <tr key={index} className="border-t">
+                                            <td className="p-2">{row.station_id}</td>
+                                            <td className="p-2">{row.assigned_latitude}</td>
+                                            <td className="p-2">{row.assigned_longitude}</td>
+                                            <td className="p-2">{row.allowed_radius_meters}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button
+                            onClick={handleBulkSubmit}
+                            disabled={uploading}
+                            className="bg-indigo-600 text-white px-4 py-2 rounded"
+                        >
+                            {uploading ? "Uploading..." : "Confirm Bulk Upload"}
+                        </button>
+                    </>
+                )}
+            </div>
             {/* ADD */}
             <div className="bg-white p-6 rounded-xl shadow">
                 <div className="grid grid-cols-4 gap-4">
