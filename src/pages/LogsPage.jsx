@@ -11,12 +11,24 @@ export default function LogsPage() {
     const [logs, setLogs] = useState([]);
     const [hasMore, setHasMore] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [exporting, setExporting] = useState(false);
 
     const limit = 20;
 
+    /* ===============================
+       FETCH LOGS
+    ================================= */
     const fetchLogs = useCallback(async (reset = false) => {
 
-        if (!stationId) return;
+        if (!stationId) {
+            alert("Please enter Station ID");
+            return;
+        }
+
+        if (from && to && from > to) {
+            alert("From date cannot be after To date");
+            return;
+        }
 
         try {
             setLoading(true);
@@ -52,59 +64,124 @@ export default function LogsPage() {
 
     }, [stationId, from, to, status, logs]);
 
+    /* ===============================
+       EXPORT CSV
+    ================================= */
+    const exportCSV = async () => {
+        if (!stationId) {
+            alert("Station ID required for export");
+            return;
+        }
+
+        try {
+            setExporting(true);
+
+            const res = await axios.get("/api/logs/export", {
+                params: { stationId, from, to, status },
+                responseType: "blob"
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `logs-${stationId}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+        } catch (err) {
+            console.error("Export error:", err);
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    const clearFilters = () => {
+        setStationId("");
+        setStatus("");
+        setFrom("");
+        setTo("");
+        setLogs([]);
+        setHasMore(false);
+    };
+
     return (
         <div className="space-y-6">
 
-            <h2 className="text-2xl font-bold text-slate-800">
-                Station Location Logs
-            </h2>
-
-            {/* FILTERS */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-white p-4 rounded-xl shadow">
-
-                <input
-                    placeholder="Station ID"
-                    value={stationId}
-                    onChange={(e) => setStationId(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                />
-
-                <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                >
-                    <option value="">All Status</option>
-                    <option value="INSIDE">INSIDE</option>
-                    <option value="OUTSIDE">OUTSIDE</option>
-                </select>
-
-                <input
-                    type="date"
-                    value={from}
-                    onChange={(e) => setFrom(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                />
-
-                <input
-                    type="date"
-                    value={to}
-                    onChange={(e) => setTo(e.target.value)}
-                    className="border rounded-lg px-3 py-2 text-sm"
-                />
-
-                <button
-                    onClick={() => fetchLogs(true)}
-                    className="bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm"
-                >
-                    Apply
-                </button>
+            <div>
+                <h2 className="text-2xl font-bold text-slate-800">
+                    Station Location Logs
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                    Advanced filtering and CSV export available
+                </p>
             </div>
 
-            {/* TABLE */}
-            <div className="bg-white rounded-xl shadow overflow-x-auto">
+            {/* ================= FILTERS ================= */}
+            <div className="bg-white p-6 rounded-2xl shadow ring-1 ring-slate-200">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+
+                    <input
+                        placeholder="Station ID"
+                        value={stationId}
+                        onChange={(e) => setStationId(e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    />
+
+                    <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    >
+                        <option value="">All Status</option>
+                        <option value="INSIDE">INSIDE</option>
+                        <option value="OUTSIDE">OUTSIDE</option>
+                    </select>
+
+                    <input
+                        type="datetime-local"
+                        value={from}
+                        onChange={(e) => setFrom(e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    />
+
+                    <input
+                        type="datetime-local"
+                        value={to}
+                        onChange={(e) => setTo(e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    />
+
+                    <button
+                        onClick={() => fetchLogs(true)}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
+                    >
+                        Apply
+                    </button>
+
+                    <button
+                        onClick={clearFilters}
+                        className="bg-slate-200 px-4 py-2 rounded-lg text-sm"
+                    >
+                        Clear
+                    </button>
+                </div>
+
+                <div className="mt-4">
+                    <button
+                        onClick={exportCSV}
+                        disabled={exporting}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+                    >
+                        {exporting ? "Exporting..." : "Export CSV"}
+                    </button>
+                </div>
+            </div>
+
+            {/* ================= TABLE ================= */}
+            <div className="bg-white rounded-2xl shadow overflow-x-auto ring-1 ring-slate-200">
                 <table className="min-w-full text-sm text-left">
-                    <thead className="bg-slate-100 text-slate-600">
+                    <thead className="bg-slate-100">
                         <tr>
                             <th className="px-4 py-3">Time</th>
                             <th className="px-4 py-3">Latitude</th>
@@ -115,7 +192,7 @@ export default function LogsPage() {
                     </thead>
                     <tbody>
                         {logs.map(log => (
-                            <tr key={log.id} className="border-t">
+                            <tr key={log.id} className="border-t hover:bg-slate-50">
                                 <td className="px-4 py-3">
                                     {new Date(log.recorded_at).toLocaleString()}
                                 </td>
@@ -138,10 +215,9 @@ export default function LogsPage() {
                 <div className="flex justify-center">
                     <button
                         onClick={() => fetchLogs(false)}
-                        disabled={loading}
                         className="px-6 py-2 bg-slate-200 rounded-lg"
                     >
-                        {loading ? "Loading..." : "Load More"}
+                        Load More
                     </button>
                 </div>
             )}
