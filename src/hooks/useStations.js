@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import axios from "../utils/axiosInstance";
 
@@ -37,66 +37,81 @@ export function useStations(selectedDistrict, search) {
     const [connected, setConnected] = useState(false);
 
     /* ===============================
-       INITIAL FETCH (PROTECTED)
+       FETCH FUNCTION (Reusable)
+    ================================= */
+    const fetchStations = useCallback(async () => {
+
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        try {
+            const res = await axios.get("/api/stations/all");
+            const stationList = res.data.data || {};
+            const formatted = {};
+
+            for (const station of stationList) {
+
+                let liveAddress = "";
+                let assignedAddress = "";
+
+                if (station.latitude && station.longitude) {
+                    liveAddress = await reverseGeocode(
+                        station.latitude,
+                        station.longitude
+                    );
+                }
+
+                if (station.assigned_latitude && station.assigned_longitude) {
+                    assignedAddress = await reverseGeocode(
+                        station.assigned_latitude,
+                        station.assigned_longitude
+                    );
+                }
+
+                formatted[station.station_id] = {
+                    stationId: station.station_id,
+                    latitude: station.latitude,
+                    longitude: station.longitude,
+                    assignedLatitude: station.assigned_latitude,
+                    assignedLongitude: station.assigned_longitude,
+                    allowedRadiusMeters: station.allowed_radius_meters,
+                    status: station.status,
+                    distance: station.distance_meters,
+                    liveAddress,
+                    assignedAddress
+                };
+            }
+
+            setStations(formatted);
+
+        } catch (err) {
+            console.error(
+                "Fetch stations error:",
+                err.response?.data || err.message
+            );
+        }
+
+    }, []);
+
+    /* ===============================
+       INITIAL FETCH + AUTO REFRESH
     ================================= */
     useEffect(() => {
 
-        const token = localStorage.getItem("token");
-        if (!token) return; // ✅ Prevent API call if not logged in
-
-        async function fetchStations() {
-            try {
-                const res = await axios.get("/api/stations/all");
-
-                const stationList = res.data.data || [];
-                const formatted = {};
-
-                for (const station of stationList) {
-
-                    let liveAddress = "";
-                    let assignedAddress = "";
-
-                    if (station.latitude && station.longitude) {
-                        liveAddress = await reverseGeocode(
-                            station.latitude,
-                            station.longitude
-                        );
-                    }
-
-                    if (station.assigned_latitude && station.assigned_longitude) {
-                        assignedAddress = await reverseGeocode(
-                            station.assigned_latitude,
-                            station.assigned_longitude
-                        );
-                    }
-
-                    formatted[station.station_id] = {
-                        stationId: station.station_id,
-                        latitude: station.latitude,
-                        longitude: station.longitude,
-                        assignedLatitude: station.assigned_latitude,
-                        assignedLongitude: station.assigned_longitude,
-                        allowedRadiusMeters: station.allowed_radius_meters,
-                        status: station.status,
-                        distance: station.distance_meters,
-                        liveAddress,
-                        assignedAddress
-                    };
-                }
-
-                setStations(formatted);
-
-            } catch (err) {
-                console.error(
-                    "Fetch stations error:",
-                    err.response?.data || err.message
-                );
-            }
-        }
-
         fetchStations();
 
-    }, []);
+        const interval = setInterval(() => {
+
+            // 🔥 Refresh only if tab is visible
+            if (document.visibilityState === "visible") {
+                fetchStations();
+            }
+
+        }, 120000); // 2 minutes
+
+        return () => clearInterval(interval);
+
+    }, [fetchStations]);
 
     /* ===============================
        SOCKET CONNECTION
@@ -104,7 +119,7 @@ export function useStations(selectedDistrict, search) {
     useEffect(() => {
 
         const token = localStorage.getItem("token");
-        if (!token) return; // ✅ Prevent socket before login
+        if (!token) return;
 
         socket = io(process.env.REACT_APP_API_URL, {
             transports: ["websocket"],

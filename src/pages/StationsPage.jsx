@@ -25,6 +25,7 @@ const districtMap = {
 export default function StationsPage() {
 
     const [stations, setStations] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({});
     const [search, setSearch] = useState("");
@@ -37,26 +38,49 @@ export default function StationsPage() {
         allowed_radius_meters: 300
     });
 
+    /* ================= FETCH ================= */
     useEffect(() => {
         fetchStations();
+
+        // 🔄 Auto refresh every 2 minutes
+        const interval = setInterval(() => {
+            fetchStations();
+        }, 120000);
+
+        return () => clearInterval(interval);
     }, []);
 
     async function fetchStations() {
-        const res = await axios.get("/api/admin/stations");
-        setStations(res.data.data || []);
+        try {
+            setLoading(true);
+            const res = await axios.get("/api/admin/stations");
+            setStations(res.data.data || []);
+        } catch (err) {
+            console.error("Fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
     }
 
+    /* ================= CREATE ================= */
     async function handleSubmit() {
-        await axios.post("/api/admin/stations", form);
-        setForm({
-            station_id: "",
-            assigned_latitude: "",
-            assigned_longitude: "",
-            allowed_radius_meters: 300
-        });
-        fetchStations();
+        try {
+            await axios.post("/api/admin/stations", form);
+
+            setForm({
+                station_id: "",
+                assigned_latitude: "",
+                assigned_longitude: "",
+                allowed_radius_meters: 300
+            });
+
+            fetchStations();
+        } catch (err) {
+            alert(err.response?.data?.message || "Create failed");
+        }
     }
 
+    /* ================= EDIT ================= */
     function startEdit(station) {
         setEditingId(station.station_id);
         setEditForm({ ...station });
@@ -68,21 +92,40 @@ export default function StationsPage() {
     }
 
     async function saveEdit() {
-        await axios.put(`/api/admin/stations/${editingId}`, {
-            assigned_latitude: editForm.assigned_latitude,
-            assigned_longitude: editForm.assigned_longitude,
-            allowed_radius_meters: editForm.allowed_radius_meters,
-            status: editForm.status
-        });
+        try {
+            await axios.put(`/api/admin/stations/${editingId}`, {
+                assigned_latitude: editForm.assigned_latitude,
+                assigned_longitude: editForm.assigned_longitude,
+                allowed_radius_meters: editForm.allowed_radius_meters,
+                status: editForm.status
+            });
 
-        setEditingId(null);
-        fetchStations();
+            setEditingId(null);
+            fetchStations();
+        } catch (err) {
+            alert(err.response?.data?.message || "Update failed");
+        }
     }
 
-    /* ================= FILTER LOGIC ================= */
+    /* ================= DELETE ================= */
+    async function deleteStation(id) {
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete station ${id}?`
+        );
+
+        if (!confirmDelete) return;
+
+        try {
+            await axios.delete(`/api/admin/stations/${id}`);
+            fetchStations();
+        } catch (err) {
+            alert(err.response?.data?.message || "Delete failed");
+        }
+    }
+
+    /* ================= FILTER ================= */
     const filteredStations = useMemo(() => {
         return stations.filter(station => {
-
             const matchesSearch =
                 station.station_id
                     .toLowerCase()
@@ -103,9 +146,8 @@ export default function StationsPage() {
 
             <h2 className="text-2xl font-bold">Manage Stations</h2>
 
-            {/* ================= FILTER SECTION ================= */}
+            {/* FILTER */}
             <div className="bg-white p-6 rounded-xl shadow flex gap-4">
-
                 <input
                     placeholder="Search Station ID..."
                     value={search}
@@ -125,10 +167,9 @@ export default function StationsPage() {
                         </option>
                     ))}
                 </select>
-
             </div>
 
-            {/* ================= ADD STATION ================= */}
+            {/* ADD */}
             <div className="bg-white p-6 rounded-xl shadow">
                 <div className="grid grid-cols-4 gap-4">
                     <input
@@ -165,7 +206,7 @@ export default function StationsPage() {
                 </button>
             </div>
 
-            {/* ================= TABLE ================= */}
+            {/* TABLE */}
             <div className="bg-white rounded-xl shadow overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead className="bg-slate-100">
@@ -180,120 +221,137 @@ export default function StationsPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredStations.map(s => {
-                            const districtCode = s.station_id.slice(0, 2);
-                            return (
-                                <tr key={s.station_id} className="border-t">
+                        {loading ? (
+                            <tr>
+                                <td colSpan="7" className="text-center p-6">
+                                    Loading...
+                                </td>
+                            </tr>
+                        ) : (
+                            filteredStations.map(s => {
+                                const districtCode = s.station_id.slice(0, 2);
 
-                                    <td className="p-3 font-semibold">
-                                        {s.station_id}
-                                    </td>
+                                return (
+                                    <tr key={s.station_id} className="border-t">
 
-                                    <td className="p-3 text-slate-500">
-                                        {districtMap[districtCode] || "Unknown"}
-                                    </td>
+                                        <td className="p-3 font-semibold">
+                                            {s.station_id}
+                                        </td>
 
-                                    <td className="p-3">
-                                        {editingId === s.station_id ? (
-                                            <input
-                                                value={editForm.assigned_latitude}
-                                                onChange={e =>
-                                                    setEditForm({
-                                                        ...editForm,
-                                                        assigned_latitude: e.target.value
-                                                    })
-                                                }
-                                                className="border p-1 rounded w-full"
-                                            />
-                                        ) : (
-                                            s.assigned_latitude
-                                        )}
-                                    </td>
+                                        <td className="p-3 text-slate-500">
+                                            {districtMap[districtCode] || "Unknown"}
+                                        </td>
 
-                                    <td className="p-3">
-                                        {editingId === s.station_id ? (
-                                            <input
-                                                value={editForm.assigned_longitude}
-                                                onChange={e =>
-                                                    setEditForm({
-                                                        ...editForm,
-                                                        assigned_longitude: e.target.value
-                                                    })
-                                                }
-                                                className="border p-1 rounded w-full"
-                                            />
-                                        ) : (
-                                            s.assigned_longitude
-                                        )}
-                                    </td>
+                                        <td className="p-3">
+                                            {editingId === s.station_id ? (
+                                                <input
+                                                    value={editForm.assigned_latitude}
+                                                    onChange={e =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            assigned_latitude: e.target.value
+                                                        })
+                                                    }
+                                                    className="border p-1 rounded w-full"
+                                                />
+                                            ) : (
+                                                s.assigned_latitude
+                                            )}
+                                        </td>
 
-                                    <td className="p-3">
-                                        {editingId === s.station_id ? (
-                                            <input
-                                                value={editForm.allowed_radius_meters}
-                                                onChange={e =>
-                                                    setEditForm({
-                                                        ...editForm,
-                                                        allowed_radius_meters: e.target.value
-                                                    })
-                                                }
-                                                className="border p-1 rounded w-full"
-                                            />
-                                        ) : (
-                                            s.allowed_radius_meters
-                                        )}
-                                    </td>
+                                        <td className="p-3">
+                                            {editingId === s.station_id ? (
+                                                <input
+                                                    value={editForm.assigned_longitude}
+                                                    onChange={e =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            assigned_longitude: e.target.value
+                                                        })
+                                                    }
+                                                    className="border p-1 rounded w-full"
+                                                />
+                                            ) : (
+                                                s.assigned_longitude
+                                            )}
+                                        </td>
 
-                                    <td className="p-3">
-                                        {editingId === s.station_id ? (
-                                            <select
-                                                value={editForm.status}
-                                                onChange={e =>
-                                                    setEditForm({
-                                                        ...editForm,
-                                                        status: e.target.value
-                                                    })
-                                                }
-                                                className="border p-1 rounded w-full"
-                                            >
-                                                <option value="INSIDE">INSIDE</option>
-                                                <option value="OUTSIDE">OUTSIDE</option>
-                                                <option value="OFFLINE">OFFLINE</option>
-                                            </select>
-                                        ) : (
-                                            s.status
-                                        )}
-                                    </td>
+                                        <td className="p-3">
+                                            {editingId === s.station_id ? (
+                                                <input
+                                                    value={editForm.allowed_radius_meters}
+                                                    onChange={e =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            allowed_radius_meters: e.target.value
+                                                        })
+                                                    }
+                                                    className="border p-1 rounded w-full"
+                                                />
+                                            ) : (
+                                                s.allowed_radius_meters
+                                            )}
+                                        </td>
 
-                                    <td className="p-3">
-                                        {editingId === s.station_id ? (
-                                            <>
-                                                <button
-                                                    onClick={saveEdit}
-                                                    className="bg-emerald-600 text-white px-3 py-1 rounded text-xs mr-2"
+                                        <td className="p-3">
+                                            {editingId === s.station_id ? (
+                                                <select
+                                                    value={editForm.status}
+                                                    onChange={e =>
+                                                        setEditForm({
+                                                            ...editForm,
+                                                            status: e.target.value
+                                                        })
+                                                    }
+                                                    className="border p-1 rounded w-full"
                                                 >
-                                                    Save
-                                                </button>
-                                                <button
-                                                    onClick={cancelEdit}
-                                                    className="bg-slate-300 px-3 py-1 rounded text-xs"
-                                                >
-                                                    Cancel
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button
-                                                onClick={() => startEdit(s)}
-                                                className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
-                                            >
-                                                Edit
-                                            </button>
-                                        )}
-                                    </td>
+                                                    <option value="INSIDE">INSIDE</option>
+                                                    <option value="OUTSIDE">OUTSIDE</option>
+                                                    <option value="OFFLINE">OFFLINE</option>
+                                                </select>
+                                            ) : (
+                                                s.status
+                                            )}
+                                        </td>
 
-                                </tr>
-                            );
-                        })}
+                                        <td className="p-3 space-x-2">
+                                            {editingId === s.station_id ? (
+                                                <>
+                                                    <button
+                                                        onClick={saveEdit}
+                                                        className="bg-emerald-600 text-white px-3 py-1 rounded text-xs"
+                                                    >
+                                                        Save
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEdit}
+                                                        className="bg-slate-300 px-3 py-1 rounded text-xs"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button
+                                                        onClick={() => startEdit(s)}
+                                                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
+                                                    >
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => deleteStation(s.station_id)}
+                                                        className="bg-red-600 text-white px-3 py-1 rounded text-xs"
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </>
+                                            )}
+                                        </td>
+
+                                    </tr>
+                                );
+                            })
+                        )}
                     </tbody>
                 </table>
             </div>
