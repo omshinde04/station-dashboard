@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import axios from "../utils/axiosInstance";
+import * as XLSX from "xlsx";
 
 const districtMap = {
     "71": "Kolhapur",
