@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import { useStations } from "./hooks/useStations";
 import LogsPage from "./pages/LogsPage";
+import StationsPage from "./pages/StationsPage";
 
 function App() {
 
@@ -61,6 +62,7 @@ function App() {
           />
           <Route path="/logs" element={<LogsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
+          <Route path="/stations" element={<StationsPage />} />
         </Routes>
       </Layout>
     </Router>
