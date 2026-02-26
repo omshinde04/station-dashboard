@@ -18,6 +18,18 @@ export default function LogsPage() {
     const limit = 20;
 
     /* ===============================
+       CLEAR FILTERS
+    ================================= */
+    const clearFilters = () => {
+        setStationId("");
+        setStatus("");
+        setFrom("");
+        setTo("");
+        setLogs([]);
+        setHasMore(false);
+    };
+
+    /* ===============================
        FETCH LOGS
     ================================= */
     const fetchLogs = useCallback(async (reset = false) => {
@@ -35,9 +47,10 @@ export default function LogsPage() {
         try {
             setLoading(true);
 
-            const lastTime = !reset && logs.length
-                ? logs[logs.length - 1].recorded_at
-                : null;
+            const lastTime =
+                !reset && logs.length
+                    ? logs[logs.length - 1].recorded_at
+                    : null;
 
             const res = await axios.get("/api/logs", {
                 params: {
@@ -50,13 +63,15 @@ export default function LogsPage() {
                 }
             });
 
+            const newData = res.data?.data || [];
+
             if (reset) {
-                setLogs(res.data.data);
+                setLogs(newData);
             } else {
-                setLogs(prev => [...prev, ...res.data.data]);
+                setLogs(prev => [...prev, ...newData]);
             }
 
-            setHasMore(res.data.hasMore);
+            setHasMore(res.data?.hasMore || false);
 
         } catch (err) {
             console.error("Fetch logs error:", err);
@@ -218,8 +233,8 @@ export default function LogsPage() {
                                 <td className="px-4 py-3">{log.longitude}</td>
                                 <td className="px-4 py-3">{log.distance_meters}</td>
                                 <td className={`px-4 py-3 font-semibold ${log.status === "OUTSIDE"
-                                    ? "text-red-600"
-                                    : "text-emerald-600"
+                                        ? "text-red-600"
+                                        : "text-emerald-600"
                                     }`}>
                                     {log.status}
                                 </td>
