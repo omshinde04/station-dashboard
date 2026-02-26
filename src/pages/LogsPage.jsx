@@ -191,30 +191,6 @@ export default function LogsPage() {
                         </button>
                     ))}
                 </div>
-
-                {/* CUSTOM DATE RANGE */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="datetime-local"
-                        value={from}
-                        onChange={(e) => {
-                            setTimeRange("custom");
-                            setFrom(e.target.value);
-                        }}
-                        className="border rounded-lg px-3 py-2 text-sm"
-                    />
-
-                    <input
-                        type="datetime-local"
-                        value={to}
-                        onChange={(e) => {
-                            setTimeRange("custom");
-                            setTo(e.target.value);
-                        }}
-                        className="border rounded-lg px-3 py-2 text-sm"
-                    />
-                </div>
-
                 <button
                     onClick={exportXLS}
                     disabled={exporting}
