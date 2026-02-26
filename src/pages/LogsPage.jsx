@@ -80,11 +80,17 @@ export default function LogsPage() {
             setExporting(true);
 
             const res = await axios.get("/api/logs/export", {
-                params: { stationId, from, to, status },
-                responseType: "json"
+                params: { stationId, from, to, status }
             });
 
-            const worksheet = XLSX.utils.json_to_sheet(res.data.data);
+            const rows = res.data?.data || [];
+
+            if (!rows.length) {
+                alert("No logs available to export");
+                return;
+            }
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Logs");
 
@@ -101,18 +107,10 @@ export default function LogsPage() {
 
         } catch (err) {
             console.error("Export error:", err);
+            alert("Export failed");
         } finally {
             setExporting(false);
         }
-    };
-
-    const clearFilters = () => {
-        setStationId("");
-        setStatus("");
-        setFrom("");
-        setTo("");
-        setLogs([]);
-        setHasMore(false);
     };
 
     return (
@@ -220,8 +218,8 @@ export default function LogsPage() {
                                 <td className="px-4 py-3">{log.longitude}</td>
                                 <td className="px-4 py-3">{log.distance_meters}</td>
                                 <td className={`px-4 py-3 font-semibold ${log.status === "OUTSIDE"
-                                        ? "text-red-600"
-                                        : "text-emerald-600"
+                                    ? "text-red-600"
+                                    : "text-emerald-600"
                                     }`}>
                                     {log.status}
                                 </td>

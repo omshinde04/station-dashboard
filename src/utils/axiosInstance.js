@@ -15,7 +15,7 @@ instance.interceptors.request.use(
 
         const token = localStorage.getItem("token");
 
-        if (token) {
+        if (token && config.url?.startsWith("/api")) {
             config.headers = config.headers || {};
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -32,16 +32,16 @@ instance.interceptors.response.use(
     (response) => response,
     (error) => {
 
-        if (error.response?.status === 401) {
+        const originalUrl = error.config?.url || "";
+
+        // 🔥 Only react to API routes
+        if (originalUrl.startsWith("/api") && error.response?.status === 401) {
 
             console.warn("Session expired or unauthorized.");
 
-            const currentPath = window.location.pathname;
-
             localStorage.removeItem("token");
 
-            // ✅ Prevent infinite refresh loop
-            if (currentPath !== "/") {
+            if (window.location.pathname !== "/") {
                 window.location.href = "/";
             }
         }
