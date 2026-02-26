@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import axios from "../utils/axiosInstance";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export default function LogsPage() {
 
@@ -65,9 +67,10 @@ export default function LogsPage() {
     }, [stationId, from, to, status, logs]);
 
     /* ===============================
-       EXPORT CSV
+       EXPORT XLS
     ================================= */
-    const exportCSV = async () => {
+    const exportXLS = async () => {
+
         if (!stationId) {
             alert("Station ID required for export");
             return;
@@ -78,16 +81,23 @@ export default function LogsPage() {
 
             const res = await axios.get("/api/logs/export", {
                 params: { stationId, from, to, status },
-                responseType: "blob"
+                responseType: "json"
             });
 
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", `logs-${stationId}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            const worksheet = XLSX.utils.json_to_sheet(res.data.data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Logs");
+
+            const excelBuffer = XLSX.write(workbook, {
+                bookType: "xlsx",
+                type: "array"
+            });
+
+            const blob = new Blob([excelBuffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            });
+
+            saveAs(blob, `logs-${stationId}.xlsx`);
 
         } catch (err) {
             console.error("Export error:", err);
@@ -113,12 +123,13 @@ export default function LogsPage() {
                     Station Location Logs
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
-                    Advanced filtering and CSV export available
+                    Advanced filtering & Excel export
                 </p>
             </div>
 
             {/* ================= FILTERS ================= */}
             <div className="bg-white p-6 rounded-2xl shadow ring-1 ring-slate-200">
+
                 <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
 
                     <input
@@ -154,9 +165,10 @@ export default function LogsPage() {
 
                     <button
                         onClick={() => fetchLogs(true)}
-                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700"
+                        disabled={loading}
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50"
                     >
-                        Apply
+                        {loading ? "Loading..." : "Apply"}
                     </button>
 
                     <button
@@ -169,11 +181,11 @@ export default function LogsPage() {
 
                 <div className="mt-4">
                     <button
-                        onClick={exportCSV}
+                        onClick={exportXLS}
                         disabled={exporting}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700"
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
                     >
-                        {exporting ? "Exporting..." : "Export CSV"}
+                        {exporting ? "Exporting..." : "Export Excel"}
                     </button>
                 </div>
             </div>
@@ -191,6 +203,14 @@ export default function LogsPage() {
                         </tr>
                     </thead>
                     <tbody>
+                        {logs.length === 0 && !loading && (
+                            <tr>
+                                <td colSpan="5" className="text-center py-10 text-slate-400">
+                                    No logs found
+                                </td>
+                            </tr>
+                        )}
+
                         {logs.map(log => (
                             <tr key={log.id} className="border-t hover:bg-slate-50">
                                 <td className="px-4 py-3">
@@ -200,8 +220,8 @@ export default function LogsPage() {
                                 <td className="px-4 py-3">{log.longitude}</td>
                                 <td className="px-4 py-3">{log.distance_meters}</td>
                                 <td className={`px-4 py-3 font-semibold ${log.status === "OUTSIDE"
-                                    ? "text-red-600"
-                                    : "text-emerald-600"
+                                        ? "text-red-600"
+                                        : "text-emerald-600"
                                     }`}>
                                     {log.status}
                                 </td>
@@ -215,9 +235,10 @@ export default function LogsPage() {
                 <div className="flex justify-center">
                     <button
                         onClick={() => fetchLogs(false)}
-                        className="px-6 py-2 bg-slate-200 rounded-lg"
+                        disabled={loading}
+                        className="px-6 py-2 bg-slate-200 rounded-lg disabled:opacity-50"
                     >
-                        Load More
+                        {loading ? "Loading..." : "Load More"}
                     </button>
                 </div>
             )}
