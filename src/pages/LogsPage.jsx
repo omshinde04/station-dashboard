@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import axios from "../utils/axiosInstance";
 import { saveAs } from "file-saver";
 
@@ -6,6 +6,7 @@ export default function LogsPage() {
 
     const [stationId, setStationId] = useState("");
     const [status, setStatus] = useState("");
+    const [timeRange, setTimeRange] = useState("24h"); // default
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
 
@@ -17,15 +18,35 @@ export default function LogsPage() {
     const limit = 20;
 
     /* ===============================
+       AUTO SET DEFAULT RANGE (24h)
+    ================================= */
+    useEffect(() => {
+        applyQuickRange("24h");
+    }, []);
+
+    const applyQuickRange = (range) => {
+        const now = new Date();
+        let start = new Date();
+
+        if (range === "1h") start.setHours(now.getHours() - 1);
+        if (range === "6h") start.setHours(now.getHours() - 6);
+        if (range === "24h") start.setHours(now.getHours() - 24);
+        if (range === "7d") start.setDate(now.getDate() - 7);
+
+        setTimeRange(range);
+        setFrom(start.toISOString().slice(0, 16));
+        setTo(now.toISOString().slice(0, 16));
+    };
+
+    /* ===============================
        CLEAR FILTERS
     ================================= */
     const clearFilters = () => {
         setStationId("");
         setStatus("");
-        setFrom("");
-        setTo("");
         setLogs([]);
         setHasMore(false);
+        applyQuickRange("24h");
     };
 
     /* ===============================
@@ -35,11 +56,6 @@ export default function LogsPage() {
 
         if (!stationId) {
             alert("Please enter Station ID");
-            return;
-        }
-
-        if (from && to && from > to) {
-            alert("From date cannot be after To date");
             return;
         }
 
@@ -81,7 +97,7 @@ export default function LogsPage() {
     }, [stationId, from, to, status, logs]);
 
     /* ===============================
-       EXPORT XLS
+       EXPORT CSV
     ================================= */
     const exportXLS = async () => {
 
@@ -95,11 +111,10 @@ export default function LogsPage() {
 
             const res = await axios.get("/api/logs/export", {
                 params: { stationId, from, to, status },
-                responseType: "blob"   // VERY IMPORTANT
+                responseType: "blob"
             });
 
             const blob = new Blob([res.data], { type: "text/csv" });
-
             saveAs(blob, `logs-${stationId}.csv`);
 
         } catch (err) {
@@ -118,14 +133,14 @@ export default function LogsPage() {
                     Station Location Logs
                 </h2>
                 <p className="text-sm text-slate-500 mt-1">
-                    Advanced filtering & Excel export
+                    Smart filtering with quick time ranges
                 </p>
             </div>
 
             {/* ================= FILTERS ================= */}
-            <div className="bg-white p-6 rounded-2xl shadow ring-1 ring-slate-200">
+            <div className="bg-white p-6 rounded-2xl shadow ring-1 ring-slate-200 space-y-4">
 
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
 
                     <input
                         placeholder="Station ID"
@@ -144,24 +159,10 @@ export default function LogsPage() {
                         <option value="OUTSIDE">OUTSIDE</option>
                     </select>
 
-                    <input
-                        type="datetime-local"
-                        value={from}
-                        onChange={(e) => setFrom(e.target.value)}
-                        className="border rounded-lg px-3 py-2 text-sm"
-                    />
-
-                    <input
-                        type="datetime-local"
-                        value={to}
-                        onChange={(e) => setTo(e.target.value)}
-                        className="border rounded-lg px-3 py-2 text-sm"
-                    />
-
                     <button
                         onClick={() => fetchLogs(true)}
                         disabled={loading}
-                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-emerald-700 disabled:opacity-50"
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm"
                     >
                         {loading ? "Loading..." : "Apply"}
                     </button>
@@ -170,19 +171,58 @@ export default function LogsPage() {
                         onClick={clearFilters}
                         className="bg-slate-200 px-4 py-2 rounded-lg text-sm"
                     >
-                        Clear
+                        Reset
                     </button>
                 </div>
 
-                <div className="mt-4">
-                    <button
-                        onClick={exportXLS}
-                        disabled={exporting}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50"
-                    >
-                        {exporting ? "Exporting..." : "Export Excel"}
-                    </button>
+                {/* QUICK TIME FILTERS */}
+                <div className="flex gap-3 flex-wrap">
+                    {["1h", "6h", "24h", "7d"].map(range => (
+                        <button
+                            key={range}
+                            onClick={() => applyQuickRange(range)}
+                            className={`px-4 py-2 rounded-lg text-sm border 
+                                ${timeRange === range
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-slate-100"
+                                }`}
+                        >
+                            Last {range}
+                        </button>
+                    ))}
                 </div>
+
+                {/* CUSTOM DATE RANGE */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                        type="datetime-local"
+                        value={from}
+                        onChange={(e) => {
+                            setTimeRange("custom");
+                            setFrom(e.target.value);
+                        }}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    />
+
+                    <input
+                        type="datetime-local"
+                        value={to}
+                        onChange={(e) => {
+                            setTimeRange("custom");
+                            setTo(e.target.value);
+                        }}
+                        className="border rounded-lg px-3 py-2 text-sm"
+                    />
+                </div>
+
+                <button
+                    onClick={exportXLS}
+                    disabled={exporting}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"
+                >
+                    {exporting ? "Exporting..." : "Export CSV"}
+                </button>
+
             </div>
 
             {/* ================= TABLE ================= */}
@@ -201,7 +241,7 @@ export default function LogsPage() {
                         {logs.length === 0 && !loading && (
                             <tr>
                                 <td colSpan="5" className="text-center py-10 text-slate-400">
-                                    No logs found
+                                    No logs found in selected range
                                 </td>
                             </tr>
                         )}
@@ -231,7 +271,7 @@ export default function LogsPage() {
                     <button
                         onClick={() => fetchLogs(false)}
                         disabled={loading}
-                        className="px-6 py-2 bg-slate-200 rounded-lg disabled:opacity-50"
+                        className="px-6 py-2 bg-slate-200 rounded-lg"
                     >
                         {loading ? "Loading..." : "Load More"}
                     </button>
