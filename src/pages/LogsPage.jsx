@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import axios from "../utils/axiosInstance";
 
 export default function LogsPage() {
@@ -7,45 +7,50 @@ export default function LogsPage() {
     const [status, setStatus] = useState("");
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
+
     const [logs, setLogs] = useState([]);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [hasMore, setHasMore] = useState(false);
+    const [loading, setLoading] = useState(false);
+
     const limit = 20;
 
-    /* ===============================
-       FETCH LOGS (STABLE FUNCTION)
-    ================================= */
-    const fetchLogs = useCallback(async () => {
+    const fetchLogs = useCallback(async (reset = false) => {
 
         if (!stationId) return;
 
         try {
+            setLoading(true);
+
+            const lastTime = !reset && logs.length
+                ? logs[logs.length - 1].recorded_at
+                : null;
+
             const res = await axios.get("/api/logs", {
                 params: {
                     stationId,
-                    page,
-                    limit,
                     from,
                     to,
-                    status
+                    status,
+                    limit,
+                    lastTime
                 }
             });
 
-            setLogs(res.data.data);
-            setTotalPages(res.data.totalPages);
+            if (reset) {
+                setLogs(res.data.data);
+            } else {
+                setLogs(prev => [...prev, ...res.data.data]);
+            }
+
+            setHasMore(res.data.hasMore);
 
         } catch (err) {
             console.error("Fetch logs error:", err);
+        } finally {
+            setLoading(false);
         }
 
-    }, [stationId, page, limit, from, to, status]);
-
-    /* ===============================
-       AUTO FETCH WHEN PAGE CHANGES
-    ================================= */
-    useEffect(() => {
-        fetchLogs();
-    }, [fetchLogs]);
+    }, [stationId, from, to, status, logs]);
 
     return (
         <div className="space-y-6">
@@ -54,7 +59,7 @@ export default function LogsPage() {
                 Station Location Logs
             </h2>
 
-            {/* ================= FILTERS ================= */}
+            {/* FILTERS */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-white p-4 rounded-xl shadow">
 
                 <input
@@ -89,17 +94,14 @@ export default function LogsPage() {
                 />
 
                 <button
-                    onClick={() => {
-                        setPage(1);
-                        fetchLogs();
-                    }}
+                    onClick={() => fetchLogs(true)}
                     className="bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm"
                 >
                     Apply
                 </button>
             </div>
 
-            {/* ================= TABLE ================= */}
+            {/* TABLE */}
             <div className="bg-white rounded-xl shadow overflow-x-auto">
                 <table className="min-w-full text-sm text-left">
                     <thead className="bg-slate-100 text-slate-600">
@@ -132,29 +134,17 @@ export default function LogsPage() {
                 </table>
             </div>
 
-            {/* ================= PAGINATION ================= */}
-            <div className="flex justify-between items-center">
-                <button
-                    disabled={page === 1}
-                    onClick={() => setPage(prev => prev - 1)}
-                    className="px-4 py-2 bg-slate-200 rounded-lg disabled:opacity-50"
-                >
-                    Previous
-                </button>
-
-                <span className="text-sm">
-                    Page {page} of {totalPages}
-                </span>
-
-                <button
-                    disabled={page === totalPages}
-                    onClick={() => setPage(prev => prev + 1)}
-                    className="px-4 py-2 bg-slate-200 rounded-lg disabled:opacity-50"
-                >
-                    Next
-                </button>
-            </div>
-
+            {hasMore && (
+                <div className="flex justify-center">
+                    <button
+                        onClick={() => fetchLogs(false)}
+                        disabled={loading}
+                        className="px-6 py-2 bg-slate-200 rounded-lg"
+                    >
+                        {loading ? "Loading..." : "Load More"}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
