@@ -95,30 +95,13 @@ export default function LogsPage() {
             setExporting(true);
 
             const res = await axios.get("/api/logs/export", {
-                params: { stationId, from, to, status }
+                params: { stationId, from, to, status },
+                responseType: "blob"   // VERY IMPORTANT
             });
 
-            const rows = res.data?.data || [];
+            const blob = new Blob([res.data], { type: "text/csv" });
 
-            if (!rows.length) {
-                alert("No logs available to export");
-                return;
-            }
-
-            const worksheet = XLSX.utils.json_to_sheet(rows);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Logs");
-
-            const excelBuffer = XLSX.write(workbook, {
-                bookType: "xlsx",
-                type: "array"
-            });
-
-            const blob = new Blob([excelBuffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            });
-
-            saveAs(blob, `logs-${stationId}.xlsx`);
+            saveAs(blob, `logs-${stationId}.csv`);
 
         } catch (err) {
             console.error("Export error:", err);
@@ -233,8 +216,8 @@ export default function LogsPage() {
                                 <td className="px-4 py-3">{log.longitude}</td>
                                 <td className="px-4 py-3">{log.distance_meters}</td>
                                 <td className={`px-4 py-3 font-semibold ${log.status === "OUTSIDE"
-                                        ? "text-red-600"
-                                        : "text-emerald-600"
+                                    ? "text-red-600"
+                                    : "text-emerald-600"
                                     }`}>
                                     {log.status}
                                 </td>
