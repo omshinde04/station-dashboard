@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Home, BarChart3, FileText } from "lucide-react";
+import { Home, BarChart3, FileText, MapPin } from "lucide-react";
 
 export default function Sidebar() {
     return (
@@ -18,7 +18,19 @@ export default function Sidebar() {
                     icon={<BarChart3 size={18} />}
                     label="Analytics"
                 />
-                <NavItem to="/logs" icon={<FileText size={18} />} label="Logs" />
+
+                <NavItem
+                    to="/logs"
+                    icon={<FileText size={18} />}
+                    label="Logs"
+                />
+
+                <NavItem
+                    to="/stations"
+                    icon={<MapPin size={18} />}
+                    label="Stations"
+                />
+
             </nav>
         </aside>
     );
