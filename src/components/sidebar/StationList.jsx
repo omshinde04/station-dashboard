@@ -1,8 +1,8 @@
 import StationCard from "./StationCard";
 
-export default function StationList({ stations }) {
+export default function StationList({ stations = [], onFocus }) {
 
-    const total = stations?.length || 0;
+    const total = stations.length;
 
     return (
         <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm ring-1 ring-slate-200/60 flex flex-col">
@@ -40,7 +40,10 @@ export default function StationList({ stations }) {
                         key={station.stationId}
                         className="transition-all duration-300 hover:scale-[1.01]"
                     >
-                        <StationCard station={station} />
+                        <StationCard
+                            station={station}
+                            onFocus={onFocus}
+                        />
                     </div>
                 ))}
 

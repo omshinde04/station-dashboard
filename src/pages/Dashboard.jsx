@@ -1,9 +1,11 @@
+import { useState } from "react";
 import MapView from "../components/map/MapView";
 import StatsGrid from "../components/sidebar/StatsGrid";
 import StationList from "../components/sidebar/StationList";
 
 export default function Dashboard({ stations, stats }) {
     const [selectedStation, setSelectedStation] = useState(null);
+
     return (
         <div className="flex gap-6">
 
@@ -13,16 +15,16 @@ export default function Dashboard({ stations, stats }) {
                     stations={stations}
                     selectedStation={selectedStation}
                 />
-                <StationCard
-                    station={station}
-                    onFocus={setSelectedStation}
-                />
             </div>
 
-            {/* RIGHT - SIDEBAR CONTENT */}
+            {/* RIGHT - SIDEBAR */}
             <div className="w-[380px] space-y-6">
                 <StatsGrid stats={stats} />
-                <StationList stations={stations} />
+
+                <StationList
+                    stations={stations}
+                    onFocus={setSelectedStation}
+                />
             </div>
 
         </div>
