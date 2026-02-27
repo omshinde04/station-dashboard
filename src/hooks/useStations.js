@@ -67,7 +67,6 @@ export function useStations(selectedDistrict, search) {
                         station.assigned_longitude
                     );
                 }
-
                 formatted[station.station_id] = {
                     stationId: station.station_id,
                     latitude: station.latitude,
@@ -77,6 +76,7 @@ export function useStations(selectedDistrict, search) {
                     allowedRadiusMeters: station.allowed_radius_meters,
                     status: station.status,
                     distance: station.distance_meters,
+                    updated_at: station.updated_at,   // 🔥 ADD THIS
                     liveAddress,
                     assignedAddress
                 };
@@ -141,7 +141,6 @@ export function useStations(selectedDistrict, search) {
                 assignedLongitude,
                 allowedRadiusMeters
             } = data;
-
             setStations(prev => ({
                 ...prev,
                 [stationId]: {
@@ -153,7 +152,8 @@ export function useStations(selectedDistrict, search) {
                     distance,
                     assignedLatitude,
                     assignedLongitude,
-                    allowedRadiusMeters
+                    allowedRadiusMeters,
+                    updated_at: data.updated_at || prev[stationId]?.updated_at
                 }
             }));
 
