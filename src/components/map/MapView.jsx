@@ -104,8 +104,12 @@ export default function MapView({ stations }) {
                                     {/* LAST UPDATE */}
                                     <div className="mt-3 text-[10px] text-slate-400 border-t pt-2">
                                         ⏱ Last Update:{" "}
-                                        {station.lastSeen
-                                            ? new Date(station.lastSeen).toLocaleTimeString()
+                                        {station.updated_at
+                                            ? new Date(station.updated_at).toLocaleTimeString("en-IN", {
+                                                hour: "2-digit",
+                                                minute: "2-digit",
+                                                second: "2-digit"
+                                            })
                                             : "—"}
                                     </div>
                                 </div>
