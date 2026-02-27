@@ -1,7 +1,6 @@
 import StationCard from "./StationCard";
 
 export default function StationList({ stations = [], onFocus }) {
-
     const total = stations.length;
 
     return (
@@ -48,7 +47,6 @@ export default function StationList({ stations = [], onFocus }) {
                 ))}
 
             </div>
-
         </div>
     );
 }
