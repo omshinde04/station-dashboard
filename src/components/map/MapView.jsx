@@ -2,11 +2,41 @@ import {
     MapContainer,
     TileLayer,
     CircleMarker,
-    Popup
+    Popup,
+    useMap
 } from "react-leaflet";
+import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 
-export default function MapView({ stations }) {
+/* =========================================
+   🚀 Fly To Selected Station
+========================================= */
+function FlyToStation({ station }) {
+    const map = useMap();
+
+    useEffect(() => {
+        if (station?.latitude && station?.longitude) {
+            map.flyTo(
+                [station.latitude, station.longitude],
+                16,
+                { duration: 1.5 }
+            );
+        }
+    }, [station, map]);
+
+    return null;
+}
+
+export default function MapView({ stations, selectedStation }) {
+
+    const markerRefs = useRef({});
+
+    useEffect(() => {
+        if (selectedStation && markerRefs.current[selectedStation.stationId]) {
+            markerRefs.current[selectedStation.stationId].openPopup();
+        }
+    }, [selectedStation]);
+
     return (
         <div className="relative z-0 h-[calc(100vh-140px)] rounded-2xl overflow-hidden shadow-lg">
 
@@ -17,6 +47,11 @@ export default function MapView({ stations }) {
                 className="h-full w-full z-0"
             >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+                {/* 🔥 Auto Fly */}
+                {selectedStation && (
+                    <FlyToStation station={selectedStation} />
+                )}
 
                 {stations.map((station) => {
                     if (!station.latitude) return null;
@@ -38,6 +73,11 @@ export default function MapView({ stations }) {
                                 fillColor: color,
                                 fillOpacity: 0.9
                             }}
+                            ref={(ref) => {
+                                if (ref) {
+                                    markerRefs.current[station.stationId] = ref;
+                                }
+                            }}
                         >
                             <Popup className="custom-popup">
                                 <div className="w-[260px]">
@@ -50,7 +90,7 @@ export default function MapView({ stations }) {
 
                                         <span
                                             className={`text-[10px] px-2 py-1 rounded-full font-semibold
-                        ${station.status === "INSIDE"
+                                            ${station.status === "INSIDE"
                                                     ? "bg-emerald-100 text-emerald-700"
                                                     : station.status === "OUTSIDE"
                                                         ? "bg-red-100 text-red-700"

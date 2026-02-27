@@ -3,12 +3,20 @@ import StatsGrid from "../components/sidebar/StatsGrid";
 import StationList from "../components/sidebar/StationList";
 
 export default function Dashboard({ stations, stats }) {
+    const [selectedStation, setSelectedStation] = useState(null);
     return (
         <div className="flex gap-6">
 
             {/* LEFT - MAP */}
             <div className="flex-1">
-                <MapView stations={stations} />
+                <MapView
+                    stations={stations}
+                    selectedStation={selectedStation}
+                />
+                <StationCard
+                    station={station}
+                    onFocus={setSelectedStation}
+                />
             </div>
 
             {/* RIGHT - SIDEBAR CONTENT */}

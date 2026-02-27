@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, MapPin } from "lucide-react";
 
-export default function StationCard({ station }) {
+export default function StationCard({ station, onFocus }) {
     const [open, setOpen] = useState(false);
 
     let statusLabel;
@@ -30,7 +30,6 @@ export default function StationCard({ station }) {
         };
     }
 
-    // 🔥 SAFE FORMATTERS
     const formattedLat =
         station.latitude != null
             ? Number(station.latitude).toFixed(6)
@@ -72,6 +71,21 @@ export default function StationCard({ station }) {
                 </div>
 
                 <div className="flex items-center gap-3">
+
+                    {/* 🔥 Locate Button */}
+                    {station.latitude && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation(); // prevent toggle
+                                onFocus && onFocus(station);
+                            }}
+                            className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition"
+                        >
+                            <MapPin size={14} />
+                            Locate
+                        </button>
+                    )}
+
                     <span
                         className={`text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wide ${style.badge}`}
                     >
