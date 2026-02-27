@@ -45,6 +45,17 @@ export default function StationCard({ station, onFocus }) {
             ? `${Number(station.distance).toFixed(2)} m`
             : null;
 
+    const formattedTime =
+        station.updated_at
+            ? new Date(station.updated_at).toLocaleString("en-IN", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit"
+            })
+            : "—";
+
     return (
         <div
             className={`
@@ -72,11 +83,10 @@ export default function StationCard({ station, onFocus }) {
 
                 <div className="flex items-center gap-3">
 
-                    {/* 🔥 Locate Button */}
                     {station.latitude && (
                         <button
                             onClick={(e) => {
-                                e.stopPropagation(); // prevent toggle
+                                e.stopPropagation();
                                 onFocus && onFocus(station);
                             }}
                             className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition"
@@ -104,19 +114,15 @@ export default function StationCard({ station, onFocus }) {
             <div
                 className={`
                     overflow-hidden transition-all duration-300 ease-in-out
-                    ${open ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}
+                    ${open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}
                 `}
             >
                 <div className="px-5 pb-5 border-t border-slate-100">
 
                     {/* Coordinates */}
                     <div className="mt-4 text-xs font-mono text-slate-600 space-y-1">
-                        <div>
-                            📍 <strong>Lat:</strong> {formattedLat}
-                        </div>
-                        <div>
-                            📍 <strong>Lng:</strong> {formattedLng}
-                        </div>
+                        <div>📍 <strong>Lat:</strong> {formattedLat}</div>
+                        <div>📍 <strong>Lng:</strong> {formattedLng}</div>
                     </div>
 
                     {/* Distance */}
@@ -141,6 +147,12 @@ export default function StationCard({ station, onFocus }) {
                             {station.liveAddress || "Resolving..."}
                         </div>
                     </div>
+
+                    {/* 🔥 LAST UPDATED */}
+                    <div className="mt-4 text-[11px] text-slate-400 border-t pt-3">
+                        ⏱ <strong>Last Update:</strong> {formattedTime}
+                    </div>
+
                 </div>
             </div>
         </div>
