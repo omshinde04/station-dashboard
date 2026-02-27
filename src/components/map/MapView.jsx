@@ -48,12 +48,16 @@ export default function MapView({ stations, selectedStation }) {
             >
                 <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-                {/* 🔥 Auto Fly */}
                 {selectedStation && (
                     <FlyToStation station={selectedStation} />
                 )}
 
                 {stations.map((station) => {
+
+                    // 🔥 DEBUG LOG
+                    console.log("MAP STATION OBJECT:", station);
+                    console.log("UPDATED_AT VALUE:", station.updated_at);
+
                     if (!station.latitude) return null;
 
                     const color =
@@ -62,6 +66,20 @@ export default function MapView({ stations, selectedStation }) {
                             : station.status === "OFFLINE"
                                 ? "#6B7280"
                                 : "#16A34A";
+
+                    const parsedTime =
+                        station.updated_at
+                            ? new Date(station.updated_at)
+                            : null;
+
+                    const formattedTime =
+                        parsedTime && !isNaN(parsedTime)
+                            ? parsedTime.toLocaleTimeString("en-IN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit"
+                            })
+                            : "—";
 
                     return (
                         <CircleMarker
@@ -82,7 +100,6 @@ export default function MapView({ stations, selectedStation }) {
                             <Popup className="custom-popup">
                                 <div className="w-[260px]">
 
-                                    {/* HEADER */}
                                     <div className="flex justify-between items-center mb-2">
                                         <h3 className="font-bold text-slate-900 text-sm">
                                             🚀 {station.stationId}
@@ -101,7 +118,6 @@ export default function MapView({ stations, selectedStation }) {
                                         </span>
                                     </div>
 
-                                    {/* COORDINATES */}
                                     <div className="text-xs font-mono text-slate-600 space-y-1">
                                         <div>
                                             📍 <strong>Lat:</strong>{" "}
@@ -113,7 +129,6 @@ export default function MapView({ stations, selectedStation }) {
                                         </div>
                                     </div>
 
-                                    {/* DISTANCE */}
                                     {station.distance !== undefined && (
                                         <div className="mt-2 text-xs text-slate-600">
                                             📏 <strong>Distance:</strong>{" "}
@@ -121,7 +136,6 @@ export default function MapView({ stations, selectedStation }) {
                                         </div>
                                     )}
 
-                                    {/* ASSIGNED AREA */}
                                     <div className="mt-3 text-xs">
                                         <div className="font-semibold text-slate-700">
                                             🎯 Assigned Area
@@ -131,7 +145,6 @@ export default function MapView({ stations, selectedStation }) {
                                         </div>
                                     </div>
 
-                                    {/* CURRENT LOCATION */}
                                     <div className="mt-3 text-xs">
                                         <div className="font-semibold text-slate-700">
                                             🛰 Current Location
@@ -141,17 +154,16 @@ export default function MapView({ stations, selectedStation }) {
                                         </div>
                                     </div>
 
-                                    {/* LAST UPDATE */}
+                                    {/* 🔥 DEBUG LAST UPDATE */}
                                     <div className="mt-3 text-[10px] text-slate-400 border-t pt-2">
-                                        ⏱ Last Update:{" "}
-                                        {station.updated_at
-                                            ? new Date(station.updated_at).toLocaleTimeString("en-IN", {
-                                                hour: "2-digit",
-                                                minute: "2-digit",
-                                                second: "2-digit"
-                                            })
-                                            : "—"}
+                                        ⏱ Last Update: {formattedTime}
                                     </div>
+
+                                    {/* 🔥 RAW VALUE DISPLAY */}
+                                    <div className="text-[9px] text-red-400 mt-1">
+                                        RAW: {String(station.updated_at)}
+                                    </div>
+
                                 </div>
                             </Popup>
                         </CircleMarker>
