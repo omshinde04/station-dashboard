@@ -28,7 +28,7 @@ export default function StatsGrid({ stats }) {
             : 0;
 
     return (
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-5 gap-5">
 
             {/* Total Machines */}
             <StatCard
