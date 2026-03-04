@@ -5,6 +5,19 @@ import axios from "../utils/axiosInstance";
 let socket;
 const addressCache = new Map();
 
+const agencyMap = {
+    "Infinity Networks": ["71"],
+    "Amol Bhorker Corporation Pvt Ltd": ["72"],
+    "Shreyas Sanat Kumar": ["73"],
+    "VS Solutions": ["74", "75", "76"],
+    "Startech Technology Pvt Ltd": ["77", "78", "79", "80"],
+    "Pritam Khalode": ["81", "82", "84"],
+    "Mandar Honkase": ["83"],
+    "OMS Sai Multi Services": ["85", "86"],
+    "Amol Bhorker Corporation": ["87"],
+    "Amol Nagare": ["88"]
+};
+
 /* ===============================
    REVERSE GEOCODE
 ================================= */
