@@ -164,20 +164,14 @@ export default function Header({
                         <select
                             value={selectedAgency}
                             onChange={(e) => setSelectedAgency(e.target.value)}
-                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white
-                            text-sm font-medium ring-1 ring-slate-200
-                            hover:ring-slate-300 focus:ring-2 focus:ring-emerald-500
-                            transition-all outline-none"
+                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white text-sm font-medium ring-1 ring-slate-200"
                         >
-
                             <option value="ALL">All Agencies</option>
 
                             {Object.keys(agencyMap).map((agency) => (
-
                                 <option key={agency} value={agency}>
                                     {agency}
                                 </option>
-
                             ))}
 
                         </select>
