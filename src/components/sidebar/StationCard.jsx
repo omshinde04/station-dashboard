@@ -2,159 +2,99 @@ import { useState } from "react";
 import { ChevronDown, MapPin } from "lucide-react";
 
 export default function StationCard({ station, onFocus }) {
+
     const [open, setOpen] = useState(false);
 
-    let statusLabel;
-    let style;
-
-    if (station.status === "OFFLINE") {
-        statusLabel = "OFFLINE";
-        style = {
+    const statusConfig = {
+        OFFLINE: {
+            label: "OFFLINE",
             badge: "bg-slate-100 text-slate-600",
             border: "border-slate-400",
             dot: "bg-slate-500"
-        };
-    } else if (station.status === "OUTSIDE") {
-        statusLabel = "OUTSIDE";
-        style = {
+        },
+        OUTSIDE: {
+            label: "OUTSIDE",
             badge: "bg-red-100 text-red-700",
             border: "border-red-500",
             dot: "bg-red-500"
-        };
-    } else {
-        statusLabel = "ONLINE";
-        style = {
+        },
+        INSIDE: {
+            label: "ONLINE",
             badge: "bg-emerald-100 text-emerald-700",
             border: "border-emerald-500",
             dot: "bg-emerald-500"
-        };
-    }
+        }
+    };
 
-    const formattedLat =
-        station.latitude != null
-            ? Number(station.latitude).toFixed(6)
-            : "—";
-
-    const formattedLng =
-        station.longitude != null
-            ? Number(station.longitude).toFixed(6)
-            : "—";
-
-    const formattedDistance =
-        station.distance != null
-            ? `${Number(station.distance).toFixed(2)} m`
-            : null;
+    const config = statusConfig[station.status] || statusConfig.INSIDE;
 
     const formattedTime =
         station.updated_at
-            ? new Date(station.updated_at).toLocaleString("en-IN", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
-            })
+            ? new Date(station.updated_at).toLocaleTimeString("en-IN")
             : "—";
 
     return (
         <div
-            className={`
-                bg-white rounded-2xl shadow-sm
-                border-l-4 ${style.border}
-                transition-all duration-300
-                hover:shadow-md
-            `}
+            className={`bg-white rounded-xl shadow-sm border-l-4 ${config.border} hover:shadow-md transition`}
         >
-            {/* HEADER */}
+
             <div
                 onClick={() => setOpen(!open)}
-                className="cursor-pointer flex justify-between items-center px-5 py-4"
+                className="cursor-pointer flex justify-between items-center px-4 py-3"
             >
-                <div className="flex items-center gap-3">
-                    <span
-                        className={`h-2.5 w-2.5 rounded-full ${style.dot} ${station.status !== "OFFLINE" ? "animate-pulse" : ""
-                            }`}
-                    ></span>
 
-                    <h4 className="font-bold text-slate-900">
-                        {station.stationId || "—"}
-                    </h4>
+                <div className="flex items-center gap-3">
+
+                    <span
+                        className={`h-2.5 w-2.5 rounded-full ${config.dot} ${station.status !== "OFFLINE" ? "animate-pulse" : ""}`}
+                    />
+
+                    <div className="flex flex-col leading-tight">
+
+                        <span className="font-semibold text-sm">
+                            {station.stationId}
+                        </span>
+
+                        <span className="text-[10px] text-slate-400">
+                            {formattedTime}
+                        </span>
+
+                    </div>
+
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
 
                     {station.latitude && (
+
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onFocus && onFocus(station);
                             }}
-                            className="flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100 transition"
+                            className="flex items-center gap-1 text-[11px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md"
                         >
-                            <MapPin size={14} />
+                            <MapPin size={12} />
                             Locate
                         </button>
+
                     )}
 
                     <span
-                        className={`text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wide ${style.badge}`}
+                        className={`text-[9px] px-2 py-1 rounded-full font-semibold ${config.badge}`}
                     >
-                        {statusLabel}
+                        {config.label}
                     </span>
 
                     <ChevronDown
-                        size={16}
-                        className={`transition-transform duration-300 ${open ? "rotate-180" : ""
-                            }`}
+                        size={14}
+                        className={`transition-transform ${open ? "rotate-180" : ""}`}
                     />
-                </div>
-            </div>
-
-            {/* COLLAPSIBLE */}
-            <div
-                className={`
-                    overflow-hidden transition-all duration-300 ease-in-out
-                    ${open ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}
-                `}
-            >
-                <div className="px-5 pb-5 border-t border-slate-100">
-
-                    {/* Coordinates */}
-                    <div className="mt-4 text-xs font-mono text-slate-600 space-y-1">
-                        <div>📍 <strong>Lat:</strong> {formattedLat}</div>
-                        <div>📍 <strong>Lng:</strong> {formattedLng}</div>
-                    </div>
-
-                    {/* Distance */}
-                    {formattedDistance && (
-                        <div className="mt-3 text-xs text-slate-500">
-                            📏 <strong>Distance:</strong> {formattedDistance}
-                        </div>
-                    )}
-
-                    {/* Assigned Area */}
-                    <div className="mt-3 text-xs text-slate-600">
-                        🎯 <span className="font-semibold">Assigned Area:</span>
-                        <div className="text-slate-500 mt-1 leading-relaxed">
-                            {station.assignedAddress || "Not configured"}
-                        </div>
-                    </div>
-
-                    {/* Current Location */}
-                    <div className="mt-3 text-xs text-slate-600">
-                        🛰 <span className="font-semibold">Current Location:</span>
-                        <div className="text-slate-500 mt-1 leading-relaxed">
-                            {station.liveAddress || "Resolving..."}
-                        </div>
-                    </div>
-
-                    {/* 🔥 LAST UPDATED */}
-                    <div className="mt-4 text-[11px] text-slate-400 border-t pt-3">
-                        ⏱ <strong>Last Update:</strong> {formattedTime}
-                    </div>
 
                 </div>
+
             </div>
+
         </div>
     );
 }
