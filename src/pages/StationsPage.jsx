@@ -23,6 +23,20 @@ const districtMap = {
     "88": "Ahilyanagar"
 };
 
+const agencyMap = {
+    "Infinity Networks": ["71"],
+    "Amol Bhorker Corporation Pvt Ltd": ["72"],
+    "Shreyas Sanat Kumar": ["73"],
+    "VS Solutions": ["74", "75", "76"],
+    "Startech Technology Pvt Ltd": ["77", "78", "79", "80"],
+    "Pritam Khalode": ["81", "82", "84"],
+    "Mandar Honkase": ["83"],
+    "OMS Sai Multi Services": ["85", "86"],
+    "Amol Bhorker Corporation": ["87"],
+    "Amol Nagare": ["88"]
+};
+
+
 export default function StationsPage() {
 
     const [stations, setStations] = useState([]);
@@ -33,6 +47,7 @@ export default function StationsPage() {
     const [selectedDistrict, setSelectedDistrict] = useState("ALL");
     const [bulkPreview, setBulkPreview] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [selectedAgency, setSelectedAgency] = useState("ALL");
 
     const [form, setForm] = useState({
         station_id: "",
@@ -178,6 +193,7 @@ export default function StationsPage() {
     /* ================= FILTER ================= */
     const filteredStations = useMemo(() => {
         return stations.filter(station => {
+
             const matchesSearch =
                 station.station_id
                     .toLowerCase()
@@ -189,10 +205,14 @@ export default function StationsPage() {
                 selectedDistrict === "ALL" ||
                 districtCode === selectedDistrict;
 
-            return matchesSearch && matchesDistrict;
-        });
-    }, [stations, search, selectedDistrict]);
+            const matchesAgency =
+                selectedAgency === "ALL" ||
+                agencyMap[selectedAgency]?.includes(districtCode);
 
+            return matchesSearch && matchesDistrict && matchesAgency;
+
+        });
+    }, [stations, search, selectedDistrict, selectedAgency]);
     return (
         <div className="space-y-6">
 
@@ -200,6 +220,7 @@ export default function StationsPage() {
 
             {/* FILTER */}
             <div className="bg-white p-6 rounded-xl shadow flex gap-4">
+
                 <input
                     placeholder="Search Station ID..."
                     value={search}
@@ -219,6 +240,22 @@ export default function StationsPage() {
                         </option>
                     ))}
                 </select>
+
+                <select
+                    value={selectedAgency}
+                    onChange={e => setSelectedAgency(e.target.value)}
+                    className="border px-3 py-2 rounded"
+                >
+                    <option value="ALL">All Agencies</option>
+
+                    {Object.keys(agencyMap).map((agency) => (
+                        <option key={agency} value={agency}>
+                            {agency}
+                        </option>
+                    ))}
+
+                </select>
+
             </div>
             {/* ================= BULK UPLOAD ================= */}
             <div className="bg-white p-6 rounded-2xl shadow border border-slate-200">
