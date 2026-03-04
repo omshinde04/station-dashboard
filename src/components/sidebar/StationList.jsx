@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import StationCard from "./StationCard";
 import { Search } from "lucide-react";
 
@@ -10,7 +10,10 @@ export default function StationList({ stations = [], onFocus }) {
 
     const PAGE_SIZE = 6;
 
-    /* SORT BY PRIORITY */
+    /* ===============================
+       PRIORITY SORT
+    =============================== */
+
     const sortedStations = useMemo(() => {
 
         const priority = {
@@ -25,7 +28,9 @@ export default function StationList({ stations = [], onFocus }) {
 
     }, [stations]);
 
-    /* FILTER + SEARCH */
+    /* ===============================
+       FILTER + SEARCH
+    =============================== */
 
     const filteredStations = useMemo(() => {
 
@@ -46,29 +51,48 @@ export default function StationList({ stations = [], onFocus }) {
 
     }, [sortedStations, search, filter]);
 
-    /* PAGINATION */
+    /* ===============================
+       RESET PAGE WHEN FILTER CHANGES
+    =============================== */
+
+    useEffect(() => {
+        setPage(1);
+    }, [filter, search]);
+
+    /* ===============================
+       PAGINATION
+    =============================== */
 
     const totalPages = Math.ceil(filteredStations.length / PAGE_SIZE);
 
-    const paginatedStations = filteredStations.slice(
-        (page - 1) * PAGE_SIZE,
-        page * PAGE_SIZE
-    );
+    const paginatedStations = useMemo(() => {
+
+        const start = (page - 1) * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
+
+        return filteredStations.slice(start, end);
+
+    }, [filteredStations, page]);
+
+    /* ===============================
+       UI
+    =============================== */
 
     return (
-        <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm ring-1 ring-slate-200 flex flex-col">
+        <div className="bg-white rounded-2xl shadow-md ring-1 ring-slate-200 flex flex-col h-[640px]">
 
-            {/* HEADER */}
-            <div className="px-5 py-4 border-b">
+            {/* ================= HEADER ================= */}
+
+            <div className="px-5 py-4 border-b bg-white sticky top-0 z-10">
 
                 <div className="flex justify-between items-center mb-3">
 
-                    <h3 className="text-sm font-bold">
+                    <h3 className="text-sm font-bold text-slate-900">
                         Station Activity
                     </h3>
 
-                    <span className="text-xs px-3 py-1 rounded-full bg-slate-100">
-                        {stations.length} Active
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                        {filteredStations.length} Results
                     </span>
 
                 </div>
@@ -85,34 +109,30 @@ export default function StationList({ stations = [], onFocus }) {
                     <input
                         placeholder="Search station..."
                         value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setPage(1);
-                        }}
-                        className="w-full pl-8 pr-3 py-2 rounded-lg bg-slate-100 text-xs outline-none"
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-2 rounded-lg bg-slate-100 text-xs outline-none focus:ring-2 focus:ring-emerald-400"
                     />
 
                 </div>
 
-                {/* FILTERS */}
+                {/* FILTER BUTTONS */}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
 
                     {["ALL", "ONLINE", "OUTSIDE", "OFFLINE"].map((f) => (
 
                         <button
                             key={f}
-                            onClick={() => {
-                                setFilter(f);
-                                setPage(1);
-                            }}
-                            className={`text-[11px] px-3 py-1 rounded-full font-semibold
+                            onClick={() => setFilter(f)}
+                            className={`
+                                text-[11px] px-3 py-1 rounded-full font-semibold transition
                                 ${filter === f
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-slate-100 text-slate-600"}
+                                    ? "bg-emerald-500 text-white shadow-sm"
+                                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"}
                             `}
                         >
                             {f}
+
                         </button>
 
                     ))}
@@ -121,9 +141,23 @@ export default function StationList({ stations = [], onFocus }) {
 
             </div>
 
-            {/* LIST */}
+            {/* ================= LIST ================= */}
 
-            <div className="flex flex-col gap-3 p-4 overflow-y-auto max-h-[520px]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+
+                {paginatedStations.length === 0 && (
+
+                    <div className="text-center text-slate-400 py-20">
+
+                        <div className="text-3xl mb-2">📡</div>
+
+                        <p className="text-sm font-medium">
+                            No Stations Found
+                        </p>
+
+                    </div>
+
+                )}
 
                 {paginatedStations.map((station) => (
 
@@ -137,28 +171,28 @@ export default function StationList({ stations = [], onFocus }) {
 
             </div>
 
-            {/* PAGINATION */}
+            {/* ================= PAGINATION ================= */}
 
             {totalPages > 1 && (
 
-                <div className="flex justify-between items-center px-4 py-3 border-t text-xs">
+                <div className="flex justify-between items-center px-4 py-3 border-t bg-slate-50 text-xs">
 
                     <button
                         disabled={page === 1}
-                        onClick={() => setPage(page - 1)}
-                        className="px-3 py-1 rounded bg-slate-100 disabled:opacity-40"
+                        onClick={() => setPage((p) => p - 1)}
+                        className="px-3 py-1 rounded-lg bg-white ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-40"
                     >
                         Prev
                     </button>
 
-                    <span>
+                    <span className="font-semibold text-slate-600">
                         Page {page} / {totalPages}
                     </span>
 
                     <button
                         disabled={page === totalPages}
-                        onClick={() => setPage(page + 1)}
-                        className="px-3 py-1 rounded bg-slate-100 disabled:opacity-40"
+                        onClick={() => setPage((p) => p + 1)}
+                        className="px-3 py-1 rounded-lg bg-white ring-1 ring-slate-200 hover:bg-slate-100 disabled:opacity-40"
                     >
                         Next
                     </button>
