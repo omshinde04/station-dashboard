@@ -28,18 +28,36 @@ const districtMap = {
     "88": "Ahilyanagar"
 };
 
+/* ================= AGENCY MAP ================= */
+
+const agencyMap = {
+    "Infinity Networks": ["71"],
+    "Amol Bhorker Corporation Pvt Ltd": ["72"],
+    "Shreyas Sanat Kumar": ["73"],
+    "VS Solutions": ["74", "75", "76"],
+    "Startech Technology Pvt Ltd": ["77", "78", "79", "80"],
+    "Pritam Khalode": ["81", "82", "84"],
+    "Mandar Honkase": ["83"],
+    "OMS Sai Multi Services": ["85", "86"],
+    "Amol Bhorker Corporation": ["87"],
+    "Amol Nagare": ["88"]
+};
+
 export default function Header({
     search,
     setSearch,
     selectedDistrict,
     setSelectedDistrict,
+    selectedAgency,
+    setSelectedAgency,
     connected,
     onLogout
 }) {
 
     const [time, setTime] = useState(new Date());
 
-    // 🔐 Decode JWT
+    /* ================= JWT USER ================= */
+
     const token = localStorage.getItem("token");
     let userEmail = "";
 
@@ -50,7 +68,8 @@ export default function Header({
         } catch { }
     }
 
-    // ⏰ Live Clock
+    /* ================= LIVE CLOCK ================= */
+
     useEffect(() => {
         const timer = setInterval(() => setTime(new Date()), 1000);
         return () => clearInterval(timer);
@@ -60,10 +79,10 @@ export default function Header({
         <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-200 shadow-sm">
             <div className="w-full px-6 py-4 flex justify-between items-center">
 
-                {/* ================= LEFT SECTION ================= */}
+                {/* ================= LEFT ================= */}
+
                 <div className="flex items-center gap-5">
 
-                    {/* Logo */}
                     <img
                         src={RailtailLogo}
                         alt="Railtail Logo"
@@ -76,56 +95,102 @@ export default function Header({
                         <h1 className="text-lg font-bold text-slate-900 tracking-tight">
                             Railtail
                         </h1>
+
                         <span className="text-[10px] uppercase tracking-widest text-emerald-600 font-semibold">
                             Command Center
                         </span>
                     </div>
+
                 </div>
 
-                {/* ================= RIGHT SECTION ================= */}
+                {/* ================= RIGHT ================= */}
+
                 <div className="flex items-center gap-5">
 
-                    {/* Search */}
+                    {/* SEARCH */}
+
                     <div className="relative hidden md:block">
                         <Search
                             size={16}
                             className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                         />
+
                         <input
                             placeholder="Search stations..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="h-9 w-60 pl-9 pr-4 rounded-xl bg-slate-100/70 text-sm 
+                            className="h-9 w-60 pl-9 pr-4 rounded-xl bg-slate-100/70 text-sm
                             ring-1 ring-slate-200 focus:ring-2 focus:ring-emerald-500
                             transition-all outline-none"
                         />
                     </div>
 
-                    {/* District Select */}
+                    {/* DISTRICT FILTER */}
+
                     <div className="relative hidden md:block">
+
                         <select
                             value={selectedDistrict}
                             onChange={(e) => setSelectedDistrict(e.target.value)}
-                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white 
+                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white
                             text-sm font-medium ring-1 ring-slate-200
                             hover:ring-slate-300 focus:ring-2 focus:ring-emerald-500
                             transition-all outline-none"
                         >
+
                             <option value="ALL">All Districts</option>
+
                             {Object.entries(districtMap).map(([code, name]) => (
+
                                 <option key={code} value={code}>
                                     {name} ({code})
                                 </option>
+
                             ))}
+
                         </select>
 
                         <ChevronDown
                             size={14}
                             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
                         />
+
                     </div>
 
-                    {/* Connection Status */}
+                    {/* ================= AGENCY FILTER ================= */}
+
+                    <div className="relative hidden md:block">
+
+                        <select
+                            value={selectedAgency}
+                            onChange={(e) => setSelectedAgency(e.target.value)}
+                            className="appearance-none h-9 pl-4 pr-9 rounded-xl bg-white
+                            text-sm font-medium ring-1 ring-slate-200
+                            hover:ring-slate-300 focus:ring-2 focus:ring-emerald-500
+                            transition-all outline-none"
+                        >
+
+                            <option value="ALL">All Agencies</option>
+
+                            {Object.keys(agencyMap).map((agency) => (
+
+                                <option key={agency} value={agency}>
+                                    {agency}
+                                </option>
+
+                            ))}
+
+                        </select>
+
+                        <ChevronDown
+                            size={14}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                        />
+
+                    </div>
+
+                    {/* CONNECTION STATUS */}
+
                     <div
                         className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider
                         ${connected
@@ -133,30 +198,39 @@ export default function Header({
                                 : "bg-red-50 text-red-600 ring-1 ring-red-500/30"
                             }`}
                     >
+
                         <span className="relative flex h-2 w-2">
+
                             <span
-                                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${connected
-                                    ? "bg-emerald-400 animate-ping"
-                                    : "bg-red-400"
+                                className={`absolute inline-flex h-full w-full rounded-full opacity-75
+                                ${connected
+                                        ? "bg-emerald-400 animate-ping"
+                                        : "bg-red-400"
                                     }`}
                             />
+
                             <span
-                                className={`relative inline-flex h-2 w-2 rounded-full ${connected
-                                    ? "bg-emerald-500"
-                                    : "bg-red-500"
+                                className={`relative inline-flex h-2 w-2 rounded-full
+                                ${connected
+                                        ? "bg-emerald-500"
+                                        : "bg-red-500"
                                     }`}
                             />
+
                         </span>
 
                         {connected ? "Live" : "Offline"}
+
                     </div>
 
-                    {/* Clock */}
+                    {/* CLOCK */}
+
                     <div className="hidden lg:block px-3 py-1.5 bg-slate-100/80 rounded-xl font-mono text-xs font-medium text-slate-700 shadow-inner">
                         {time.toLocaleTimeString()}
                     </div>
 
-                    {/* User */}
+                    {/* USER */}
+
                     <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 ring-1 ring-slate-200">
                         <User size={14} className="text-slate-500" />
                         <span className="text-xs font-medium text-slate-700">
@@ -164,15 +238,19 @@ export default function Header({
                         </span>
                     </div>
 
-                    {/* Logout */}
+                    {/* LOGOUT */}
+
                     <button
                         onClick={onLogout}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 
-                        text-red-600 text-xs font-bold uppercase tracking-wider 
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50
+                        text-red-600 text-xs font-bold uppercase tracking-wider
                         ring-1 ring-red-200 hover:bg-red-100 transition-all"
                     >
+
                         <LogOut size={14} />
+
                         Logout
+
                     </button>
 
                 </div>
