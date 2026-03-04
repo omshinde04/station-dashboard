@@ -7,6 +7,8 @@ export default function Layout({
     setSearch,
     selectedDistrict,
     setSelectedDistrict,
+    selectedAgency,
+    setSelectedAgency,
     connected,
     onLogout
 }) {
@@ -19,17 +21,17 @@ export default function Layout({
                 setSearch={setSearch}
                 selectedDistrict={selectedDistrict}
                 setSelectedDistrict={setSelectedDistrict}
+                selectedAgency={selectedAgency}
+                setSelectedAgency={setSelectedAgency}
                 connected={connected}
                 onLogout={onLogout}
             />
 
-            {/* BODY AREA */}
+            {/* BODY */}
             <div className="flex flex-1">
 
-                {/* SIDEBAR (starts below header) */}
                 <Sidebar />
 
-                {/* MAIN CONTENT */}
                 <main className="flex-1 p-6">
                     {children}
                 </main>
