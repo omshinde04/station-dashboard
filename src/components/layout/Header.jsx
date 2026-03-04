@@ -31,15 +31,15 @@ const districtMap = {
 /* ================= AGENCY MAP ================= */
 
 const agencyMap = {
-    "Infinity Networks": ["71"],
-    "Amol Bhorker Corporation Pvt Ltd": ["72"],
-    "Shreyas Sanat Kumar": ["73"],
+    "Infinity": ["71"],
+    "ABC Pvt Ltd": ["72"],
+    "Shreyas": ["73"],
     "VS Solutions": ["74", "75", "76"],
-    "Startech Technology Pvt Ltd": ["77", "78", "79", "80"],
-    "Pritam Khalode": ["81", "82", "84"],
-    "Mandar Honkase": ["83"],
-    "OMS Sai Multi Services": ["85", "86"],
-    "Amol Bhorker Corporation": ["87"],
+    "Startech": ["77", "78", "79", "80"],
+    "Pritam": ["81", "82", "84"],
+    "Mandar": ["83"],
+    "OMS Sai": ["85", "86"],
+    "ABC": ["87"],
     "Amol Nagare": ["88"]
 };
 
