@@ -31,7 +31,7 @@ async function reverseGeocode(lat, lng) {
 /* ===============================
    MAIN HOOK
 ================================= */
-export function useStations(selectedDistrict, search) {
+export function useStations(selectedDistrict, selectedAgency, search) {
 
     const [stations, setStations] = useState({});
     const [connected, setConnected] = useState(false);
@@ -221,14 +221,18 @@ export function useStations(selectedDistrict, search) {
                     selectedDistrict === "ALL" ||
                     districtCode === selectedDistrict;
 
-                return matchesSearch && matchesDistrict;
+                const matchesAgency =
+                    selectedAgency === "ALL" ||
+                    agencyMap[selectedAgency]?.includes(districtCode);
+
+                return matchesSearch && matchesDistrict && matchesAgency;
 
             })
             .sort((a, b) =>
                 (priority[a.status] || 4) - (priority[b.status] || 4)
             );
 
-    }, [stations, search, selectedDistrict]);
+    }, [stations, search, selectedDistrict, selectedAgency]);
 
     return { sortedStations, stats, connected };
 }

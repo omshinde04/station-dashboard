@@ -18,10 +18,11 @@ function App() {
   // 🔎 Filters
   const [search, setSearch] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("ALL");
+  const [selectedAgency, setSelectedAgency] = useState("ALL");
 
-  // 🚀 Stations Hook (always called — React rule)
+  // 🚀 Stations Hook
   const { sortedStations, stats, connected } =
-    useStations(selectedDistrict, search);
+    useStations(selectedDistrict, selectedAgency, search);
 
   const handleLogin = () => setIsAuthenticated(true);
 
@@ -42,10 +43,13 @@ function App() {
         setSearch={setSearch}
         selectedDistrict={selectedDistrict}
         setSelectedDistrict={setSelectedDistrict}
+        selectedAgency={selectedAgency}
+        setSelectedAgency={setSelectedAgency}
         connected={connected}
         onLogout={handleLogout}
       >
         <Routes>
+
           <Route
             path="/"
             element={
@@ -60,9 +64,22 @@ function App() {
             path="/analytics"
             element={<AnalyticsPage />}
           />
-          <Route path="/logs" element={<LogsPage />} />
-          <Route path="*" element={<Navigate to="/" />} />
-          <Route path="/stations" element={<StationsPage />} />
+
+          <Route
+            path="/logs"
+            element={<LogsPage />}
+          />
+
+          <Route
+            path="/stations"
+            element={<StationsPage />}
+          />
+
+          <Route
+            path="*"
+            element={<Navigate to="/" />}
+          />
+
         </Routes>
       </Layout>
     </Router>
