@@ -28,9 +28,24 @@ export default function StationCard({ station, onFocus }) {
 
     const config = statusConfig[station.status] || statusConfig.INSIDE;
 
+    const formattedLat =
+        station.latitude != null
+            ? Number(station.latitude).toFixed(6)
+            : "—";
+
+    const formattedLng =
+        station.longitude != null
+            ? Number(station.longitude).toFixed(6)
+            : "—";
+
+    const formattedDistance =
+        station.distance != null
+            ? `${Number(station.distance).toFixed(2)} m`
+            : null;
+
     const formattedTime =
         station.updated_at
-            ? new Date(station.updated_at).toLocaleTimeString("en-IN")
+            ? new Date(station.updated_at).toLocaleString("en-IN")
             : "—";
 
     return (
@@ -38,6 +53,7 @@ export default function StationCard({ station, onFocus }) {
             className={`bg-white rounded-xl shadow-sm border-l-4 ${config.border} hover:shadow-md transition`}
         >
 
+            {/* HEADER */}
             <div
                 onClick={() => setOpen(!open)}
                 className="cursor-pointer flex justify-between items-center px-4 py-3"
@@ -49,8 +65,7 @@ export default function StationCard({ station, onFocus }) {
                         className={`h-2.5 w-2.5 rounded-full ${config.dot} ${station.status !== "OFFLINE" ? "animate-pulse" : ""}`}
                     />
 
-                    <div className="flex flex-col leading-tight">
-
+                    <div className="flex flex-col">
                         <span className="font-semibold text-sm">
                             {station.stationId}
                         </span>
@@ -58,7 +73,6 @@ export default function StationCard({ station, onFocus }) {
                         <span className="text-[10px] text-slate-400">
                             {formattedTime}
                         </span>
-
                     </div>
 
                 </div>
@@ -66,18 +80,18 @@ export default function StationCard({ station, onFocus }) {
                 <div className="flex items-center gap-2">
 
                     {station.latitude && (
-
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onFocus && onFocus(station);
+                                if (onFocus) {
+                                    onFocus(station);
+                                }
                             }}
-                            className="flex items-center gap-1 text-[11px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md"
+                            className="flex items-center gap-1 text-[11px] bg-blue-50 text-blue-600 px-2 py-1 rounded-md hover:bg-blue-100"
                         >
                             <MapPin size={12} />
                             Locate
                         </button>
-
                     )}
 
                     <span
@@ -94,6 +108,40 @@ export default function StationCard({ station, onFocus }) {
                 </div>
 
             </div>
+
+            {/* DETAILS */}
+            {open && (
+
+                <div className="px-4 pb-4 border-t border-slate-100 text-xs text-slate-600">
+
+                    <div className="mt-3 font-mono space-y-1">
+                        <div>Lat: {formattedLat}</div>
+                        <div>Lng: {formattedLng}</div>
+                    </div>
+
+                    {formattedDistance && (
+                        <div className="mt-2">
+                            Distance: {formattedDistance}
+                        </div>
+                    )}
+
+                    <div className="mt-2">
+                        <span className="font-semibold">Assigned:</span>
+                        <div className="text-slate-500">
+                            {station.assignedAddress || "Not configured"}
+                        </div>
+                    </div>
+
+                    <div className="mt-2">
+                        <span className="font-semibold">Live:</span>
+                        <div className="text-slate-500">
+                            {station.liveAddress || "Resolving..."}
+                        </div>
+                    </div>
+
+                </div>
+
+            )}
 
         </div>
     );
