@@ -1,6 +1,6 @@
 import MapView from "../map/MapView";
 import StatsGrid from "../sidebar/StatsGrid";
-import StationList from "../sidebar/StationList";
+import Sidebar from "../sidebar/Sidebar";   // ✅ FIXED IMPORT
 
 export default function MainLayout({
     stations,
@@ -39,6 +39,7 @@ export default function MainLayout({
                         stations={stations}
                         onFocus={setSelectedStation}
                     />
+
                 </aside>
 
             </div>
