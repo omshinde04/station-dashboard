@@ -35,7 +35,7 @@ const agencyMap = {
     "ABC Pvt Ltd": ["72"],
     "Shreyas": ["73"],
     "VS Solutions": ["74", "75", "76"],
-    "Startech": ["77", "78", "79", "80"],
+    "Stancecode": ["77", "78", "79", "80"],
     "Pritam": ["81", "82", "84"],
     "Mandar": ["83"],
     "OMS Sai": ["85", "86"],
