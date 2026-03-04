@@ -33,7 +33,7 @@ export default function MainLayout({
 
                 {/* ================= STATION LIST ================= */}
 
-                <aside className="w-[350px] bg-white rounded-2xl shadow-md p-4">
+                <aside className="w-[350px]">
 
                     <Sidebar
                         stations={stations}
