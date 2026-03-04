@@ -18,6 +18,8 @@ const agencyMap = {
     "Amol Nagare": ["88"]
 };
 
+
+
 /* ===============================
    REVERSE GEOCODE
 ================================= */
@@ -220,9 +222,11 @@ export function useStations(selectedDistrict, selectedAgency, search) {
     ================================= */
     const sortedStations = useMemo(() => {
 
+        console.log("Selected Agency:", selectedAgency);
+
         const priority = { OUTSIDE: 1, INSIDE: 2, OFFLINE: 3 };
 
-        return Object.values(stations)
+        const filtered = Object.values(stations)
             .filter(s => {
 
                 const matchesSearch =
@@ -240,12 +244,14 @@ export function useStations(selectedDistrict, selectedAgency, search) {
 
                 return matchesSearch && matchesDistrict && matchesAgency;
 
-            })
-            .sort((a, b) =>
-                (priority[a.status] || 4) - (priority[b.status] || 4)
-            );
+            });
+
+        console.log("Filtered Stations Count:", filtered.length);
+
+        return filtered.sort((a, b) =>
+            (priority[a.status] || 4) - (priority[b.status] || 4)
+        );
 
     }, [stations, search, selectedDistrict, selectedAgency]);
-
     return { sortedStations, stats, connected };
 }
