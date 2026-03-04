@@ -30,9 +30,11 @@ export default function Layout({
             {/* BODY */}
             <div className="flex flex-1">
 
+                {/* LEFT NAVIGATION SIDEBAR */}
                 <Sidebar />
 
-                <main className="flex-1 p-6">
+                {/* PAGE CONTENT */}
+                <main className="flex-1 p-6 overflow-auto">
                     {children}
                 </main>
 
